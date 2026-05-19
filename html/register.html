@@ -45,17 +45,43 @@
         <!-- Campos para RESTAURANTE -->
         <div id="campos-restaurante" style="display:none;">
             <input id="nombre_restaurante" placeholder="Nombre del restaurante">
-            <select id="tipo_comida">
-                <option value="">Tipo de comida...</option>
-                <option value="Comida Rápida">🍔 Comida Rápida</option>
-                <option value="Italiana">🍕 Italiana</option>
-                <option value="Española">🥘 Española</option>
-                <option value="China">🥡 China</option>
-                <option value="Japonesa">🍣 Japonesa</option>
-                <option value="Mexicana">🌮 Mexicana</option>
-                <option value="Vegetariana">🥗 Vegetariana</option>
-                <option value="Otros">🍽️ Otros</option>
-            </select>
+            
+            <label>Tipo de comida:</label>
+            <div class="tipo-comida-grid">
+                <button type="button" class="tipo-btn" data-tipo="Comida Rápida" onclick="seleccionarTipo(this, 'Comida Rápida')">
+                    <span class="tipo-icon">🍔</span>
+                    <span class="tipo-nombre">Comida Rápida</span>
+                </button>
+                <button type="button" class="tipo-btn" data-tipo="Italiana" onclick="seleccionarTipo(this, 'Italiana')">
+                    <span class="tipo-icon">🍕</span>
+                    <span class="tipo-nombre">Italiana</span>
+                </button>
+                <button type="button" class="tipo-btn" data-tipo="Española" onclick="seleccionarTipo(this, 'Española')">
+                    <span class="tipo-icon">🥘</span>
+                    <span class="tipo-nombre">Española</span>
+                </button>
+                <button type="button" class="tipo-btn" data-tipo="China" onclick="seleccionarTipo(this, 'China')">
+                    <span class="tipo-icon">🥡</span>
+                    <span class="tipo-nombre">China</span>
+                </button>
+                <button type="button" class="tipo-btn" data-tipo="Japonesa" onclick="seleccionarTipo(this, 'Japonesa')">
+                    <span class="tipo-icon">🍣</span>
+                    <span class="tipo-nombre">Japonesa</span>
+                </button>
+                <button type="button" class="tipo-btn" data-tipo="Mexicana" onclick="seleccionarTipo(this, 'Mexicana')">
+                    <span class="tipo-icon">🌮</span>
+                    <span class="tipo-nombre">Mexicana</span>
+                </button>
+                <button type="button" class="tipo-btn" data-tipo="Vegetariana" onclick="seleccionarTipo(this, 'Vegetariana')">
+                    <span class="tipo-icon">🥗</span>
+                    <span class="tipo-nombre">Vegetariana</span>
+                </button>
+                <button type="button" class="tipo-btn" data-tipo="Otros" onclick="seleccionarTipo(this, 'Otros')">
+                    <span class="tipo-icon">🍽️</span>
+                    <span class="tipo-nombre">Otros</span>
+                </button>
+            </div>
+            <input type="hidden" id="tipo_comida" value="">
         </div>
         
         <button onclick="registrar()">Registrarse</button>
@@ -79,6 +105,17 @@
             } else {
                 camposRestaurante.style.display = "none";
             }
+        }
+
+        function seleccionarTipo(boton, tipo) {
+            // Remover selección de todos los botones
+            document.querySelectorAll('.tipo-btn').forEach(btn => {
+                btn.classList.remove('seleccionado');
+            });
+            // Seleccionar el botón actual
+            boton.classList.add('seleccionado');
+            // Guardar valor en el campo oculto
+            document.getElementById("tipo_comida").value = tipo;
         }
 
         async function registrar() {
@@ -141,7 +178,7 @@
         function mostrarMensaje(msg, tipo) {
             const msgDiv = document.getElementById("mensaje");
             msgDiv.textContent = msg;
-            msgDiv.style.color = tipo === "error" ? "red" : "green";
+            msgDiv.className = tipo === "error" ? "mensaje-error" : "mensaje-exito";
         }
     </script>
 </body>

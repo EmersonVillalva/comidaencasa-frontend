@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Menú - ComidaEnCasa</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>ComidaEnCasa</h2>
+        <div>
+            <a href="restaurantes.html">Restaurantes</a>
+            <a href="pedidos.html">Mis pedidos</a>
+            <a href="dashboard.html">Dashboard</a>
+        </div>
+    </div>
+
+    <div class="contenedor-con-carrito">
+        <!-- Sección del menú -->
+        <div class="menu-section">
+            <h2>Menú</h2>
+            <div class="grid" id="menu"></div>
+        </div>
+
+        <!-- Sección del carrito -->
+        <div class="carrito-section">
+            <h3>🛒 Mi pedido</h3>
+            <div id="carrito-contenido">
+                <div class="carrito-vacio">No hay productos en el carrito</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>ComidaEnCasa 2026</p>
+    </footer>
+
+    <script>
+        const API = "https://tu-backend.railway.app/api";
+        const params = new URLSearchParams(window.location.search);
+        const restauranteId = params.get("id");
+        
+        let carrito = [];
+        let restauranteNombre = "";
+
+        async function cargarMenu() {
+            try {
+                const res = await fetch(API + "/menu.php?id=" + restauranteId);
+                if (!res.ok) throw new Error("Error cargando menú");
+                const platos = await res.json();
+                
+                const resRest = await fetch(API + "/restaurantes.php");
+                const restaurantes = await resRest.json();
+                const restaurante = restaurantes.find(r => r.id == restauranteId);
+                if (restaurante) {
+                    restauranteNombre = restaurante.nombre;
+                    document.querySelector(".topbar h2").textContent = restauranteNombre;
+                }
+                
+                const menuDiv = document.getElementById("menu");
+                menuDiv.innerHTML = "";
+
+                platos.forEach(p => {
+                    const div = document.createElement("div");
+                    div.className = "card";
+                    div.innerHTML = `
+                        <img src="https://picsum.photos/300/200?random=${p.id}" alt="${p.nombre}">
+                        <div class="card-content">
+                            <h3>${p.nombre}</h3>
+                            <p>${p.descripcion || "Delicioso plato"}</p>
+                            <p><strong>${parseFloat(p.precio).toFixed(2)} €</strong></p>
+                            <button class="btn-agregar" onclick="agregarAlCarrito(${p.id}, '${p.nombre}', ${p.precio})">Agregar al carrito</button>
+                        </div>
+                    `;
+                    menuDiv.appendChild(div);
+                });
+            } catch (err) {
+                console.error("Error:", err);
+                document.getElementById("menu").innerHTML = `<p style="color:red">Error al cargar el menú: ${err.message}</p>`;
+            }
+        }
+
+        function agregarAlCarrito(id, nombre, precio) {
+            const existe = carrito.find(item => item.id === id);
+            if (existe) {
+                existe.cantidad++;
+            } else {
+                carrito.push({ 
+                    id: id, 
+                    nombre: nombre, 
+                    precio: parseFloat(precio), 
+                    cantidad: 1 
+                });
+            }
+            actualizarCarrito();
+            mostrarMensajeTemporal(`✓ ${nombre} agregado al carrito`, "exito");
+        }
+
+        function eliminarDelCarrito(id) {
+            const index = carrito.findIndex(item => item.id === id);
+            if (index !== -1) {
+                const nombre = carrito[index].nombre;
+                if (carrito[index].cantidad > 1) {
+                    carrito[index].cantidad--;
+                    mostrarMensajeTemporal(`✓ Se eliminó 1 unidad de ${nombre}`, "exito");
+                } else {
+                    carrito.splice(index, 1);
+                    mostrarMensajeTemporal(`✗ ${nombre} eliminado del carrito`, "exito");
+                }
+            }
+            actualizarCarrito();
+        }
+
+        function mostrarMensajeTemporal(mensaje, tipo) {
+            const carritoSection = document.querySelector(".carrito-section");
+            const msgDiv = document.createElement("div");
+            msgDiv.className = tipo === "exito" ? "mensaje-exito" : "mensaje-error";
+            msgDiv.textContent = mensaje;
+            carritoSection.insertBefore(msgDiv, carritoSection.firstChild);
+            
+            setTimeout(() => {
+                msgDiv.remove();
+            }, 2000);
+        }
+
+        function actualizarCarrito() {
+            const carritoDiv = document.getElementById("carrito-contenido");
+            
+            if (carrito.length === 0) {
+                carritoDiv.innerHTML = '<div class="carrito-vacio">🛒 No hay productos en el carrito</div>';
+                return;
+            }
+
+            let html = '';
+            let total = 0;
+            
+            carrito.forEach(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                html += `
+                    <div class="carrito-item">
+                        <div class="carrito-item-info">
+                            <h4>${item.nombre}</h4>
+                            <p>${item.precio.toFixed(2)} € c/u</p>
+                        </div>
+                        <div class="carrito-item-cantidad">
+                            <button onclick="eliminarDelCarrito(${item.id})">-</button>
+                            <span>${item.cantidad}</span>
+                            <button onclick="agregarAlCarrito(${item.id}, '${item.nombre}', ${item.precio})">+</button>
+                        </div>
+                        <div class="carrito-item-precio">
+                            ${subtotal.toFixed(2)} €
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                <div class="carrito-total">
+                    Total: ${total.toFixed(2)} €
+                </div>
+                <button class="btn-confirmar" onclick="confirmarPedido()">✅ Confirmar pedido</button>
+            `;
+            
+            carritoDiv.innerHTML = html;
+        }
+
+        async function confirmarPedido() {
+            const token = localStorage.getItem("token");
+            
+            if (!token) {
+                alert("❌ Debes iniciar sesión para realizar un pedido");
+                window.location.href = "login.html";
+                return;
+            }
+            
+            if (carrito.length === 0) {
+                alert("🛒 El carrito está vacío");
+                return;
+            }
+            
+            const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            
+            const items = carrito.map(item => ({
+                menu_id: item.id,
+                cantidad: item.cantidad,
+                subtotal: parseFloat((item.precio * item.cantidad).toFixed(2))
+            }));
+            
+            const btnConfirmar = document.querySelector(".btn-confirmar");
+            if (btnConfirmar) {
+                btnConfirmar.disabled = true;
+                btnConfirmar.textContent = "⏳ Procesando...";
+            }
+            
+            try {
+                const res = await fetch(API + "/pedido_crear.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({
+                        restaurante_id: parseInt(restauranteId),
+                        total: parseFloat(total.toFixed(2)),
+                        items: items
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    alert(`✅ ¡Pedido realizado con éxito!\nN° de pedido: ${data.pedido_id}\nTotal: ${total.toFixed(2)} €`);
+                    carrito = [];
+                    actualizarCarrito();
+                } else {
+                    alert("❌ Error: " + (data.error || "No se pudo completar el pedido"));
+                }
+            } catch (err) {
+                console.error("Error:", err);
+                alert("❌ Error al conectar con el servidor. Intenta nuevamente.");
+            } finally {
+                if (btnConfirmar) {
+                    btnConfirmar.disabled = false;
+                    btnConfirmar.textContent = "✅ Confirmar pedido";
+                }
+            }
+        }
+
+        cargarMenu();
+    </script>
+</body>
+</html>

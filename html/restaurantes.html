@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Restaurantes</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>Restaurantes</h2>
+        <div>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="pedidos.html">Pedidos</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="grid" id="restaurantes"></div>
+    </div>
+
+    <script>
+        const API = "https://tu-backend.railway.app/api";
+
+        async function cargarRestaurantes() {
+            const res = await fetch(API + "/restaurantes.php");
+            const restaurantes = await res.json();
+            const grid = document.getElementById("restaurantes");
+
+            restaurantes.forEach(r => {
+                const card = document.createElement("div");
+                card.className = "card";
+                card.innerHTML = `
+                    <img src="https://picsum.photos/300/200?random=${r.id}">
+                    <div class="card-content">
+                        <h3>${r.nombre}</h3>
+                        <p>${r.descripcion || ""}</p>
+                        <button onclick="verMenu(${r.id})">Ver menú</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function verMenu(id) {
+            window.location.href = "restaurante.html?id=" + id;
+        }
+
+        cargarRestaurantes();
+    </script>
+</body>
+</html>

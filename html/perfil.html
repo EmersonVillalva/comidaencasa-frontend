@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Perfil</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>Perfil usuario</h2>
+        <div>
+            <a href="dashboard.html">Dashboard</a>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <input id="nombre" placeholder="Nombre">
+        <input id="email" placeholder="Email">
+        <input id="direccion" placeholder="Dirección">
+        <button onclick="guardar()">Guardar</button>
+        <p id="msg"></p>
+    </div>
+
+    <script>
+        const API = "https://tu-backend.railway.app/api";
+
+        async function cargarPerfil() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            const res = await fetch(API + "/perfil.php", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            const data = await res.json();
+            document.getElementById("nombre").value = data.nombre || "";
+            document.getElementById("email").value = data.email || "";
+            document.getElementById("direccion").value = data.direccion || "";
+        }
+
+        async function guardar() {
+            const token = localStorage.getItem("token");
+            const res = await fetch(API + "/perfil.php", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify({
+                    nombre: document.getElementById("nombre").value,
+                    email: document.getElementById("email").value,
+                    direccion: document.getElementById("direccion").value
+                })
+            });
+            const data = await res.json();
+            document.getElementById("msg").textContent = data.mensaje || data.error;
+            if (data.mensaje) {
+                document.getElementById("msg").style.color = "green";
+            } else {
+                document.getElementById("msg").style.color = "red";
+            }
+        }
+
+        cargarPerfil();
+    </script>
+</body>
+</html>

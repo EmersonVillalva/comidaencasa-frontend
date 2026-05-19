@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ajustes</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>Ajustes</h2>
+        <div>
+            <a href="dashboard.html">Dashboard</a>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <label>Idioma</label>
+        <input id="idioma" placeholder="Español">
+        <label>Notificaciones</label>
+        <input id="notificaciones" placeholder="Activadas">
+        <button onclick="guardar()">Guardar</button>
+        <p id="msg"></p>
+    </div>
+
+    <script>
+        function guardar() {
+            localStorage.setItem("idioma", document.getElementById("idioma").value);
+            localStorage.setItem("notificaciones", document.getElementById("notificaciones").value);
+            document.getElementById("msg").textContent = "Ajustes guardados";
+            document.getElementById("msg").style.color = "green";
+        }
+
+        document.getElementById("idioma").value = localStorage.getItem("idioma") || "Español";
+        document.getElementById("notificaciones").value = localStorage.getItem("notificaciones") || "Activadas";
+    </script>
+</body>
+</html>

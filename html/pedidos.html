@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pedidos</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>Mis pedidos</h2>
+        <div>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="restaurantes.html">Restaurantes</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Restaurante</th><th>Total</th><th>Estado</th><th>Fecha</th></tr>
+            </thead>
+            <tbody id="tablaPedidos"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const API = "https://tu-backend.railway.app/api";
+
+        async function cargarPedidos() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            try {
+                const res = await fetch(API + "/pedidos.php", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+
+                if (!res.ok) throw new Error("Error cargando pedidos");
+
+                const pedidos = await res.json();
+                const tabla = document.getElementById("tablaPedidos");
+                tabla.innerHTML = "";
+
+                pedidos.forEach(p => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${p.id}</td>
+                        <td>${p.restaurante}</td>
+                        <td>${p.total} €</td>
+                        <td>${p.estado}</td>
+                        <td>${new Date(p.fecha).toLocaleDateString()}</td>
+                    `;
+                    tabla.appendChild(tr);
+                });
+            } catch (err) {
+                console.log(err);
+            }
+        }
+
+        cargarPedidos();
+    </script>
+</body>
+</html>

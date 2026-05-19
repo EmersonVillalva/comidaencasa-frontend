@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>Panel de usuario</h2>
+        <div>
+            <a href="restaurantes.html">Restaurantes</a>
+            <a href="pedidos.html">Pedidos</a>
+            <a href="perfil.html">Perfil</a>
+            <a href="ajustes.html">Ajustes</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Bienvenido</h2>
+        <p>Desde aquí puedes ver tus pedidos y restaurantes.</p>
+        <button onclick="irPedidos()">Mis pedidos</button>
+        <button onclick="logout()">Cerrar sesión</button>
+    </div>
+
+    <footer>
+        <p>© 2026 ComidaEnCasa</p>
+    </footer>
+
+    <script>
+        function irPedidos() {
+            window.location.href = "pedidos.html";
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        }
+
+        if (!localStorage.getItem("token")) {
+            window.location.href = "login.html";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gestión menú</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>Menú restaurante</h2>
+    </div>
+
+    <div class="container">
+        <h2>Platos</h2>
+        <input id="buscar" placeholder="Buscar plato">
+        <button onclick="agregarPlato()">Añadir plato</button>
+        <div id="listaPlatos" class="grid"></div>
+    </div>
+
+    <script>
+        const API = "https://tu-backend.railway.app/api";
+
+        async function cargarMenu() {
+            const res = await fetch(API + "/menu.php?id=1");
+            const platos = await res.json();
+            const div = document.getElementById("listaPlatos");
+            div.innerHTML = "";
+            platos.forEach(p => {
+                div.innerHTML += `
+                    <div class="card">
+                        <div class="card-content">
+                            <h3>${p.nombre}</h3>
+                            <p>${p.precio} €</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function agregarPlato() {
+            alert("Funcionalidad para añadir plato");
+        }
+
+        cargarMenu();
+    </script>
+</body>
+</html>

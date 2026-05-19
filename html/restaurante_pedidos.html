@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pedidos restaurante</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>Pedidos recibidos</h2>
+    </div>
+
+    <div class="container">
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Pedido</th><th>Fecha</th><th>Estado</th></tr>
+            </thead>
+            <tbody id="tablaPedidos"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const API = "https://tu-backend.railway.app/api";
+
+        async function cargarPedidos() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            const res = await fetch(API + "/pedidos.php", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            const pedidos = await res.json();
+            const tabla = document.getElementById("tablaPedidos");
+
+            pedidos.forEach(p => {
+                tabla.innerHTML += `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td>Restaurante: ${p.restaurante}</td>
+                        <td>${new Date(p.fecha).toLocaleDateString()}</td>
+                        <td>${p.estado}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        cargarPedidos();
+    </script>
+</body>
+</html>

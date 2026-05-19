@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>ComidaEnCasa</h2>
+    </div>
+
+    <div class="form-card">
+        <h2>Iniciar sesión</h2>
+        <input id="email" placeholder="Email">
+        <input id="password" type="password" placeholder="Contraseña">
+        <button onclick="login()">Entrar</button>
+        <p id="error"></p>
+    </div>
+
+    <script>
+        const API = "https://tu-backend.railway.app/api";
+
+        async function login() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            try {
+                const res = await fetch(API + "/login.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (!res.ok) throw new Error("Login incorrecto");
+
+                const data = await res.json();
+                localStorage.setItem("token", data.token);
+                window.location.href = "dashboard.html";
+            } catch (err) {
+                document.getElementById("error").textContent = err.message;
+            }
+        }
+    </script>
+</body>
+</html>

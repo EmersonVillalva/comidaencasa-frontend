@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Panel repartidor</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>Repartidor</h2>
+    </div>
+
+    <div class="container">
+        <h2>Pedidos asignados</h2>
+        <div id="pedidos"></div>
+    </div>
+
+    <script>
+        const API = "https://tu-backend.railway.app/api";
+
+        async function cargarPedidos() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            const res = await fetch(API + "/pedidos.php", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            const pedidos = await res.json();
+            const div = document.getElementById("pedidos");
+
+            pedidos.forEach(p => {
+                div.innerHTML += `
+                    <div class="card">
+                        <div class="card-content">
+                            <h3>Pedido #${p.id}</h3>
+                            <p>Restaurante: ${p.restaurante}</p>
+                            <p>Total: ${p.total} €</p>
+                            <p>Estado: ${p.estado}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        cargarPedidos();
+    </script>
+</body>
+</html>

@@ -1,25 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard</title>
+    <title>Dashboard - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
 
     <div class="topbar">
-        <h2>Panel de usuario</h2>
+        <h2>ComidaEnCasa</h2>
         <div>
             <a href="restaurantes.html">Restaurantes</a>
-            <a href="pedidos.html">Pedidos</a>
+            <a href="pedidos.html">Mis pedidos</a>
             <a href="perfil.html">Perfil</a>
             <a href="ajustes.html">Ajustes</a>
         </div>
     </div>
 
     <div class="container">
-        <h2>Bienvenido</h2>
-        <p>Desde aquí puedes ver tus pedidos y restaurantes.</p>
-        <button onclick="irPedidos()">Mis pedidos</button>
+        <h2>Bienvenido, <span id="nombreUsuario"></span></h2>
+        <p>Desde aquí puedes ver tus pedidos y explorar restaurantes.</p>
+        <button onclick="window.location.href='restaurantes.html'">Ver restaurantes</button>
+        <button onclick="window.location.href='pedidos.html'">Mis pedidos</button>
         <button onclick="logout()">Cerrar sesión</button>
     </div>
 
@@ -28,17 +29,24 @@
     </footer>
 
     <script>
-        function irPedidos() {
-            window.location.href = "pedidos.html";
-        }
-
+        const nombre = localStorage.getItem("usuario_nombre") || "Usuario";
+        document.getElementById("nombreUsuario").textContent = nombre;
+        
         function logout() {
             localStorage.removeItem("token");
+            localStorage.removeItem("usuario_rol");
+            localStorage.removeItem("usuario_nombre");
             window.location.href = "login.html";
         }
-
+        
+        // Verificar autenticación
         if (!localStorage.getItem("token")) {
             window.location.href = "login.html";
+        }
+        
+        // Si es restaurante, redirigir a su panel
+        if (localStorage.getItem("usuario_rol") === 'restaurante') {
+            window.location.href = "restaurante_panel.html";
         }
     </script>
 </body>

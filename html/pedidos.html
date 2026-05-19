@@ -1,8 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Pedidos</title>
+    <title>Mis pedidos</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .estado-pendiente { background: #ffc107; color: #000; padding: 3px 8px; border-radius: 5px; display: inline-block; }
+        .estado-preparando { background: #17a2b8; color: #fff; padding: 3px 8px; border-radius: 5px; display: inline-block; }
+        .estado-en camino { background: #007bff; color: #fff; padding: 3px 8px; border-radius: 5px; display: inline-block; }
+        .estado-entregado { background: #28a745; color: #fff; padding: 3px 8px; border-radius: 5px; display: inline-block; }
+        .estado-cancelado { background: #dc3545; color: #fff; padding: 3px 8px; border-radius: 5px; display: inline-block; }
+        
+        .select-estado {
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-actualizar {
+            background: #007bff;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .btn-actualizar:hover {
+            background: #0056b3;
+        }
+    </style>
 </head>
 <body>
 
@@ -15,12 +38,8 @@
     </div>
 
     <div class="container">
-        <table>
-            <thead>
-                <tr><th>ID</th><th>Restaurante</th><th>Total</th><th>Estado</th><th>Fecha</th></tr>
-            </thead>
-            <tbody id="tablaPedidos"></tbody>
-        </table>
+        <h2 id="titulo">Cargando...</h2>
+        <div id="contenido-pedidos"></div>
     </div>
 
     <script>
@@ -41,22 +60,135 @@
                 if (!res.ok) throw new Error("Error cargando pedidos");
 
                 const pedidos = await res.json();
-                const tabla = document.getElementById("tablaPedidos");
-                tabla.innerHTML = "";
-
-                pedidos.forEach(p => {
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td>${p.id}</td>
-                        <td>${p.restaurante}</td>
-                        <td>${p.total} €</td>
-                        <td>${p.estado}</td>
-                        <td>${new Date(p.fecha).toLocaleDateString()}</td>
+                const div = document.getElementById("contenido-pedidos");
+                const titulo = document.getElementById("titulo");
+                
+                if (pedidos.length === 0 || (pedidos.error && pedidos.error.includes("vinculado"))) {
+                    if (pedidos.error) {
+                        div.innerHTML = `<p style="color:orange">${pedidos.error}</p>`;
+                    } else {
+                        div.innerHTML = "<p>No hay pedidos para mostrar</p>";
+                    }
+                    return;
+                }
+                
+                // Detectar si es cliente o restaurante por el primer pedido
+                const esRestaurante = pedidos[0] && pedidos[0].rol === 'restaurante';
+                
+                if (esRestaurante) {
+                    titulo.innerHTML = "📋 Pedidos de mi restaurante";
+                    
+                    // Tabla para restaurante
+                    let html = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cliente</th>
+                                    <th>Email</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                     `;
-                    tabla.appendChild(tr);
-                });
+                    
+                    for (const p of pedidos) {
+                        html += `
+                            <tr>
+                                <td>${p.id}</td>
+                                <td>${p.cliente}</td>
+                                <td>${p.cliente_email}</td>
+                                <td>${p.total} €</td>
+                                <td><span class="estado-${p.estado.replace(' ', '-')}">${p.estado}</span></td>
+                                <td>${new Date(p.fecha).toLocaleString()}</td>
+                                <td>
+                                    <select class="select-estado" data-id="${p.id}" data-estado="${p.estado}">
+                                        <option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                                        <option value="preparando" ${p.estado === 'preparando' ? 'selected' : ''}>Preparando</option>
+                                        <option value="en camino" ${p.estado === 'en camino' ? 'selected' : ''}>En camino</option>
+                                        <option value="entregado" ${p.estado === 'entregado' ? 'selected' : ''}>Entregado</option>
+                                        <option value="cancelado" ${p.estado === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                                    </select>
+                                    <button class="btn-actualizar" onclick="actualizarEstado(${p.id}, this)">Actualizar</button>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                    
+                    html += `</tbody></table>`;
+                    div.innerHTML = html;
+                    
+                } else {
+                    titulo.innerHTML = "🛒 Mis pedidos";
+                    
+                    // Tabla para cliente
+                    let html = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Restaurante</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    for (const p of pedidos) {
+                        html += `
+                            <tr>
+                                <td>${p.id}</td>
+                                <td>${p.restaurante}</td>
+                                <td>${p.total} €</td>
+                                <td><span class="estado-${p.estado.replace(' ', '-')}">${p.estado}</span></td>
+                                <td>${new Date(p.fecha).toLocaleString()}</td>
+                            </tr>
+                        `;
+                    }
+                    
+                    html += `</tbody></table>`;
+                    div.innerHTML = html;
+                }
+                
             } catch (err) {
                 console.log(err);
+                document.getElementById("contenido-pedidos").innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+            }
+        }
+        
+        async function actualizarEstado(pedidoId, button) {
+            const select = button.previousElementSibling;
+            const nuevoEstado = select.value;
+            const token = localStorage.getItem("token");
+            
+            try {
+                const res = await fetch(API + "/actualizar_estado_pedido.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({
+                        pedido_id: pedidoId,
+                        estado: nuevoEstado
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    alert("✅ " + data.mensaje);
+                    cargarPedidos(); // Recargar la tabla
+                } else {
+                    alert("❌ Error: " + (data.error || "No se pudo actualizar"));
+                }
+            } catch (err) {
+                alert("Error al conectar con el servidor");
             }
         }
 

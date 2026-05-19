@@ -3,7 +3,6 @@
 <head>
     <title>Registro - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
-    
 </head>
 <body>
 
@@ -47,13 +46,6 @@
             <textarea id="descripcion_restaurante" rows="3" placeholder="Descripción del restaurante (opcional)"></textarea>
         </div>
         
-        <!-- Campos extra para REPARTIDOR -->
-        <div id="campos-repartidor" class="campo-extra">
-            <h3>🛵 Datos del repartidor</h3>
-            <input id="vehiculo" placeholder="Tipo de vehículo (opcional)">
-            <input id="licencia" placeholder="Número de licencia (opcional)">
-        </div>
-        
         <button onclick="registrar()">Registrarse</button>
         <p id="mensaje"></p>
         
@@ -69,21 +61,15 @@
         function seleccionarRol(rol) {
             rolSeleccionado = rol;
             
-            // Actualizar UI
             document.querySelectorAll('.rol-opcion').forEach(el => {
                 el.classList.remove('seleccionado');
             });
             document.querySelector(`.rol-opcion[data-rol="${rol}"]`).classList.add('seleccionado');
             
-            // Ocultar todos los campos extra
             document.getElementById("campos-restaurante").classList.remove('visible');
-            document.getElementById("campos-repartidor").classList.remove('visible');
             
-            // Mostrar campos según rol
             if (rol === 'restaurante') {
                 document.getElementById("campos-restaurante").classList.add('visible');
-            } else if (rol === 'repartidor') {
-                document.getElementById("campos-repartidor").classList.add('visible');
             }
         }
 
@@ -106,7 +92,6 @@
                 direccion: direccion
             };
             
-            // Agregar datos específicos según rol
             if (rolSeleccionado === 'restaurante') {
                 const nombreRestaurante = document.getElementById("nombre_restaurante").value;
                 if (!nombreRestaurante) {
@@ -115,11 +100,6 @@
                 }
                 datos.nombre_restaurante = nombreRestaurante;
                 datos.descripcion_restaurante = document.getElementById("descripcion_restaurante").value;
-            }
-            
-            if (rolSeleccionado === 'repartidor') {
-                datos.vehiculo = document.getElementById("vehiculo").value;
-                datos.licencia = document.getElementById("licencia").value;
             }
             
             try {
@@ -132,14 +112,10 @@
                 const data = await res.json();
                 
                 if (res.ok) {
-                    let mensaje = "✅ " + data.mensaje;
-                    if (rolSeleccionado === 'restaurante') {
-                        mensaje += "\n\nAhora puedes iniciar sesión con tu cuenta de restaurante.";
-                    }
-                    mostrarMensaje(mensaje, "exito");
+                    mostrarMensaje("✅ " + data.mensaje, "exito");
                     setTimeout(() => {
                         window.location.href = "login.html";
-                    }, 3000);
+                    }, 2000);
                 } else {
                     mostrarMensaje("❌ " + data.error, "error");
                 }
@@ -154,7 +130,6 @@
             msgDiv.className = tipo === "error" ? "mensaje-error" : "mensaje-exito";
         }
         
-        // Seleccionar cliente por defecto
         seleccionarRol('cliente');
     </script>
 </body>

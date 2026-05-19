@@ -32,18 +32,25 @@
             font-size: 12px;
             color: #666;
         }
-        .campo-restaurante {
+        .campo-extra {
             display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
         }
-        .campo-restaurante.visible {
+        .campo-extra.visible {
             display: block;
         }
-        select {
+        select, textarea {
             width: 100%;
             padding: 12px;
             margin-bottom: 15px;
             border-radius: 6px;
             border: 1px solid #ddd;
+        }
+        textarea {
+            resize: vertical;
         }
         .mensaje-error {
             color: red;
@@ -53,6 +60,9 @@
         .mensaje-exito {
             color: green;
             text-align: center;
+            margin-top: 10px;
+        }
+        .campo-restaurante {
             margin-top: 10px;
         }
     </style>
@@ -78,7 +88,7 @@
             </div>
             <div class="rol-opcion" data-rol="restaurante" onclick="seleccionarRol('restaurante')">
                 <h3>🏪 Restaurante</h3>
-                <p>Gestiona tus pedidos</p>
+                <p>Vende tu comida</p>
             </div>
             <div class="rol-opcion" data-rol="repartidor" onclick="seleccionarRol('repartidor')">
                 <h3>🛵 Repartidor</h3>
@@ -86,16 +96,24 @@
             </div>
         </div>
         
+        <!-- Campos comunes -->
         <input id="nombre" placeholder="Nombre completo">
         <input id="email" type="email" placeholder="Email">
         <input id="password" type="password" placeholder="Contraseña">
         <input id="direccion" placeholder="Dirección (opcional)">
         
-        <div id="campo-restaurante" class="campo-restaurante">
-            <label>Selecciona tu restaurante:</label>
-            <select id="restaurante_id">
-                <option value="">-- Selecciona un restaurante --</option>
-            </select>
+        <!-- Campos extra para RESTAURANTE -->
+        <div id="campos-restaurante" class="campo-extra">
+            <h3>📋 Datos del restaurante</h3>
+            <input id="nombre_restaurante" placeholder="Nombre del restaurante">
+            <textarea id="descripcion_restaurante" rows="3" placeholder="Descripción del restaurante (opcional)"></textarea>
+        </div>
+        
+        <!-- Campos extra para REPARTIDOR -->
+        <div id="campos-repartidor" class="campo-extra">
+            <h3>🛵 Datos del repartidor</h3>
+            <input id="vehiculo" placeholder="Tipo de vehículo (opcional)">
+            <input id="licencia" placeholder="Número de licencia (opcional)">
         </div>
         
         <button onclick="registrar()">Registrarse</button>
@@ -110,24 +128,6 @@
         const API = "https://backend-production-78b0.up.railway.app/api";
         let rolSeleccionado = 'cliente';
 
-        // Cargar restaurantes para el selector
-        async function cargarRestaurantes() {
-            try {
-                const res = await fetch(API + "/restaurantes.php");
-                const restaurantes = await res.json();
-                const select = document.getElementById("restaurante_id");
-                
-                restaurantes.forEach(r => {
-                    const option = document.createElement("option");
-                    option.value = r.id;
-                    option.textContent = r.nombre;
-                    select.appendChild(option);
-                });
-            } catch (err) {
-                console.error("Error cargando restaurantes:", err);
-            }
-        }
-
         function seleccionarRol(rol) {
             rolSeleccionado = rol;
             
@@ -137,12 +137,15 @@
             });
             document.querySelector(`.rol-opcion[data-rol="${rol}"]`).classList.add('seleccionado');
             
-            // Mostrar/ocultar campo de restaurante
-            const campoRestaurante = document.getElementById("campo-restaurante");
+            // Ocultar todos los campos extra
+            document.getElementById("campos-restaurante").classList.remove('visible');
+            document.getElementById("campos-repartidor").classList.remove('visible');
+            
+            // Mostrar campos según rol
             if (rol === 'restaurante') {
-                campoRestaurante.classList.add('visible');
-            } else {
-                campoRestaurante.classList.remove('visible');
+                document.getElementById("campos-restaurante").classList.add('visible');
+            } else if (rol === 'repartidor') {
+                document.getElementById("campos-repartidor").classList.add('visible');
             }
         }
 
@@ -151,15 +154,9 @@
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
             const direccion = document.getElementById("direccion").value;
-            const restaurante_id = document.getElementById("restaurante_id").value;
             
             if (!nombre || !email || !password) {
-                mostrarMensaje("Por favor completa todos los campos", "error");
-                return;
-            }
-            
-            if (rolSeleccionado === 'restaurante' && !restaurante_id) {
-                mostrarMensaje("Por favor selecciona un restaurante", "error");
+                mostrarMensaje("Por favor completa todos los campos obligatorios", "error");
                 return;
             }
             
@@ -171,8 +168,20 @@
                 direccion: direccion
             };
             
+            // Agregar datos específicos según rol
             if (rolSeleccionado === 'restaurante') {
-                datos.restaurante_id = parseInt(restaurante_id);
+                const nombreRestaurante = document.getElementById("nombre_restaurante").value;
+                if (!nombreRestaurante) {
+                    mostrarMensaje("Por favor ingresa el nombre del restaurante", "error");
+                    return;
+                }
+                datos.nombre_restaurante = nombreRestaurante;
+                datos.descripcion_restaurante = document.getElementById("descripcion_restaurante").value;
+            }
+            
+            if (rolSeleccionado === 'repartidor') {
+                datos.vehiculo = document.getElementById("vehiculo").value;
+                datos.licencia = document.getElementById("licencia").value;
             }
             
             try {
@@ -185,10 +194,14 @@
                 const data = await res.json();
                 
                 if (res.ok) {
-                    mostrarMensaje("✅ " + data.mensaje + " - Redirigiendo al login...", "exito");
+                    let mensaje = "✅ " + data.mensaje;
+                    if (rolSeleccionado === 'restaurante') {
+                        mensaje += "\n\nAhora puedes iniciar sesión con tu cuenta de restaurante.";
+                    }
+                    mostrarMensaje(mensaje, "exito");
                     setTimeout(() => {
                         window.location.href = "login.html";
-                    }, 2000);
+                    }, 3000);
                 } else {
                     mostrarMensaje("❌ " + data.error, "error");
                 }
@@ -205,7 +218,6 @@
         
         // Seleccionar cliente por defecto
         seleccionarRol('cliente');
-        cargarRestaurantes();
     </script>
 </body>
 </html>

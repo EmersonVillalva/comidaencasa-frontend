@@ -18,18 +18,21 @@
     <div class="form-card">
         <h2>Crear cuenta</h2>
         
-        <div class="rol-selector">
-            <div class="rol-opcion" data-rol="cliente" onclick="seleccionarRol('cliente')">
-                <h3>👤 Cliente</h3>
-                <p>Pide comida a domicilio</p>
-            </div>
-            <div class="rol-opcion" data-rol="restaurante" onclick="seleccionarRol('restaurante')">
-                <h3>🏪 Restaurante</h3>
-                <p>Vende tu comida</p>
-            </div>
-            <div class="rol-opcion" data-rol="repartidor" onclick="seleccionarRol('repartidor')">
-                <h3>🛵 Repartidor</h3>
-                <p>Reparte pedidos</p>
+        <div class="grupo-rol">
+            <label>Tipo de cuenta:</label>
+            <div class="rol-opciones">
+                <label class="rol-label">
+                    <input type="radio" name="rol" value="cliente" checked onchange="cambiarRol('cliente')">
+                    👤 Cliente
+                </label>
+                <label class="rol-label">
+                    <input type="radio" name="rol" value="restaurante" onchange="cambiarRol('restaurante')">
+                    🏪 Restaurante
+                </label>
+                <label class="rol-label">
+                    <input type="radio" name="rol" value="repartidor" onchange="cambiarRol('repartidor')">
+                    🛵 Repartidor
+                </label>
             </div>
         </div>
         
@@ -37,13 +40,22 @@
         <input id="nombre" placeholder="Nombre completo">
         <input id="email" type="email" placeholder="Email">
         <input id="password" type="password" placeholder="Contraseña">
-        <input id="direccion" placeholder="Dirección (opcional)">
+        <input id="ciudad" placeholder="Ciudad / Pueblo">
         
-        <!-- Campos extra para RESTAURANTE -->
-        <div id="campos-restaurante" class="campo-extra">
-            <h3>📋 Datos del restaurante</h3>
+        <!-- Campos para RESTAURANTE -->
+        <div id="campos-restaurante" style="display:none;">
             <input id="nombre_restaurante" placeholder="Nombre del restaurante">
-            <textarea id="descripcion_restaurante" rows="3" placeholder="Descripción del restaurante (opcional)"></textarea>
+            <select id="tipo_comida">
+                <option value="">Tipo de comida...</option>
+                <option value="Comida Rápida">🍔 Comida Rápida</option>
+                <option value="Italiana">🍕 Italiana</option>
+                <option value="Española">🥘 Española</option>
+                <option value="China">🥡 China</option>
+                <option value="Japonesa">🍣 Japonesa</option>
+                <option value="Mexicana">🌮 Mexicana</option>
+                <option value="Vegetariana">🥗 Vegetariana</option>
+                <option value="Otros">🍽️ Otros</option>
+            </select>
         </div>
         
         <button onclick="registrar()">Registrarse</button>
@@ -58,18 +70,14 @@
         const API = "https://backend-production-78b0.up.railway.app/api";
         let rolSeleccionado = 'cliente';
 
-        function seleccionarRol(rol) {
+        function cambiarRol(rol) {
             rolSeleccionado = rol;
-            
-            document.querySelectorAll('.rol-opcion').forEach(el => {
-                el.classList.remove('seleccionado');
-            });
-            document.querySelector(`.rol-opcion[data-rol="${rol}"]`).classList.add('seleccionado');
-            
-            document.getElementById("campos-restaurante").classList.remove('visible');
+            const camposRestaurante = document.getElementById("campos-restaurante");
             
             if (rol === 'restaurante') {
-                document.getElementById("campos-restaurante").classList.add('visible');
+                camposRestaurante.style.display = "block";
+            } else {
+                camposRestaurante.style.display = "none";
             }
         }
 
@@ -77,9 +85,9 @@
             const nombre = document.getElementById("nombre").value;
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
-            const direccion = document.getElementById("direccion").value;
+            const ciudad = document.getElementById("ciudad").value;
             
-            if (!nombre || !email || !password) {
+            if (!nombre || !email || !password || !ciudad) {
                 mostrarMensaje("Por favor completa todos los campos obligatorios", "error");
                 return;
             }
@@ -89,17 +97,23 @@
                 email: email,
                 password: password,
                 rol: rolSeleccionado,
-                direccion: direccion
+                ciudad: ciudad
             };
             
             if (rolSeleccionado === 'restaurante') {
                 const nombreRestaurante = document.getElementById("nombre_restaurante").value;
+                const tipoComida = document.getElementById("tipo_comida").value;
+                
                 if (!nombreRestaurante) {
                     mostrarMensaje("Por favor ingresa el nombre del restaurante", "error");
                     return;
                 }
+                if (!tipoComida) {
+                    mostrarMensaje("Por favor selecciona el tipo de comida", "error");
+                    return;
+                }
                 datos.nombre_restaurante = nombreRestaurante;
-                datos.descripcion_restaurante = document.getElementById("descripcion_restaurante").value;
+                datos.tipo_comida = tipoComida;
             }
             
             try {
@@ -127,10 +141,8 @@
         function mostrarMensaje(msg, tipo) {
             const msgDiv = document.getElementById("mensaje");
             msgDiv.textContent = msg;
-            msgDiv.className = tipo === "error" ? "mensaje-error" : "mensaje-exito";
+            msgDiv.style.color = tipo === "error" ? "red" : "green";
         }
-        
-        seleccionarRol('cliente');
     </script>
 </body>
 </html>

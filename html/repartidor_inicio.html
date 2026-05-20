@@ -7,7 +7,7 @@
 <body>
 
     <div class="topbar">
-        <h2>ComidaEnCasa - Repartidor 222</h2>
+        <h2>ComidaEnCasa - Repartidor</h2>
         <div>
             <span>🛵 Hola, <span id="nombreUsuario"></span></span>
             <a href="repartidor_inicio.html">📦 Pedidos</a>
@@ -62,24 +62,18 @@
                 });
 
                 const data = await res.json();
+                console.log("Respuesta del servidor:", data);
 
-                if (!res.ok) {
-                    throw new Error(data.error || "Error cargando pedido");
-                }
-
-                // La respuesta ahora es { pedido: {...} } o { pedido: null }
-                if (!data.pedido) {
+                if (data.pedido) {
+                    pedidoActual = data.pedido;
+                    mostrarPedido(pedidoActual);
+                } else {
                     mostrarMensaje(data.mensaje || "No hay pedidos disponibles en tu ciudad");
-                    estaCargando = false;
-                    return;
                 }
-
-                pedidoActual = data.pedido;
-                mostrarPedido(pedidoActual);
                 estaCargando = false;
 
             } catch (err) {
-                console.error(err);
+                console.error("Error:", err);
                 mostrarMensaje("Error al cargar pedido: " + err.message);
                 estaCargando = false;
             }
@@ -92,9 +86,9 @@
                     <h3>🍽️ Nuevo pedido disponible</h3>
                     <p><strong>Restaurante:</strong> ${pedido.restaurante}</p>
                     <p><strong>Cliente:</strong> ${pedido.cliente}</p>
-                    <p><strong>Dirección entrega:</strong> ${pedido.cliente_direccion}</p>
-                    <p><strong>Total del pedido:</strong> ${pedido.total.toFixed(2)} €</p>
-                    <p><strong>Ciudad:</strong> ${pedido.ciudad}</p>
+                    <p><strong>Dirección entrega:</strong> ${pedido.cliente_direccion || "No especificada"}</p>
+                    <p><strong>Total del pedido:</strong> ${pedido.total ? pedido.total.toFixed(2) : "0"} €</p>
+                    <p><strong>Ciudad:</strong> ${pedido.ciudad || "General"}</p>
                     
                     <div style="display: flex; gap: 15px; margin-top: 20px;">
                         <button onclick="aceptarPedido()" style="background: #28a745; flex: 1;">✅ Aceptar pedido</button>

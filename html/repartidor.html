@@ -3,74 +3,16 @@
 <head>
     <title>Panel Repartidor - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
-    <style>
-        .pedido-card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            margin: 20px auto;
-            max-width: 500px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .confirmacion-card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            margin: 20px auto;
-            max-width: 500px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .confirmacion-card h3 {
-            color: #28a745;
-            margin-bottom: 15px;
-        }
-        .btn-aceptar {
-            background: #28a745;
-            flex: 1;
-        }
-        .btn-aceptar:hover {
-            background: #218838;
-        }
-        .btn-rechazar {
-            background: #dc3545;
-            flex: 1;
-        }
-        .btn-rechazar:hover {
-            background: #c82333;
-        }
-        .btn-siguiente {
-            background: #007bff;
-            margin-top: 20px;
-        }
-        .loading {
-            text-align: center;
-            padding: 40px;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #ff6b6b;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
 </head>
 <body>
 
     <div class="topbar">
         <h2>ComidaEnCasa - Repartidor</h2>
         <div>
-            <span style="margin-right: 15px;">🛵 Hola, <span id="nombreUsuario"></span></span>
+            <span>🛵 Hola, <span id="nombreUsuario"></span></span>
             <a href="repartidor.html">📦 Pedidos</a>
             <a href="repartidor_perfil.html">⚙️ Mi perfil</a>
-            <a href="#" onclick="logout()" style="color: #dc3545;">🚪 Cerrar sesión</a>
+            <a href="#" onclick="logout()">🚪 Cerrar sesión</a>
         </div>
     </div>
 
@@ -138,7 +80,6 @@
                     throw new Error(data.error || "Error cargando pedido");
                 }
 
-                // Verificar si hay pedido
                 if (!data.id && !data.pedido) {
                     mostrarSinPedidos();
                     estaCargando = false;
@@ -170,7 +111,7 @@
                     <p><strong>Total del pedido:</strong> ${pedido.total ? pedido.total.toFixed(2) : "0"} €</p>
                     <p><strong>Ciudad:</strong> ${pedido.ciudad || "General"}</p>
                     
-                    <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <div class="flex-buttons">
                         <button class="btn-aceptar" onclick="aceptarPedido(${pedido.id})">✅ Aceptar pedido</button>
                         <button class="btn-rechazar" onclick="rechazarPedido(${pedido.id})">❌ Rechazar pedido</button>
                     </div>
@@ -204,8 +145,8 @@
         function mostrarError(mensaje) {
             const contenedor = document.getElementById("contenido-pedido");
             contenedor.innerHTML = `
-                <div class="confirmacion-card" style="border-color: #dc3545;">
-                    <h3 style="color: #dc3545;">❌ Error</h3>
+                <div class="confirmacion-card">
+                    <h3 class="error">❌ Error</h3>
                     <p>${mensaje}</p>
                     <button class="btn-siguiente" onclick="cargarSiguientePedido()">🔄 Intentar de nuevo</button>
                 </div>
@@ -249,7 +190,6 @@
                 });
 
                 if (res.ok) {
-                    // Mostrar loading y cargar siguiente pedido
                     mostrarLoading(true);
                     setTimeout(() => {
                         cargarSiguientePedido();
@@ -265,7 +205,6 @@
             }
         }
 
-        // Iniciar
         cargarSiguientePedido();
     </script>
 </body>

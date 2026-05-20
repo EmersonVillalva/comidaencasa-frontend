@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mis pedidos - ComidaEnCasa</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>ComidaEnCasa</h2>
+        <div>
+            <span style="margin-right: 15px;">👤 Hola, <span id="nombreUsuario"></span></span>
+            <a href="cliente_inicio.html">🏠 Inicio</a>
+            <a href="restaurantes.html">🍽️ Restaurantes</a>
+            <a href="cliente_pedidos.html">📦 Mis pedidos</a>
+            <a href="cliente_perfil.html">⚙️ Mi perfil</a>
+            <a href="#" onclick="logout()" style="color: #dc3545;">🚪 Cerrar sesión</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Mis pedidos</h2>
+        <div id="pedidos"></div>
+    </div>
+
+    <footer>
+        <p>ComidaEnCasa - Tu comida favorita a domicilio</p>
+    </footer>
+
+    <script>
+        const API = "https://backend-production-78b0.up.railway.app/api";
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+            window.location.href = "login.html";
+        }
+
+        document.getElementById("nombreUsuario").textContent = localStorage.getItem("usuario_nombre") || "Usuario";
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("usuario_rol");
+            localStorage.removeItem("usuario_nombre");
+            localStorage.removeItem("usuario_email");
+            window.location.href = "login.html";
+        }
+
+        async function cargarPedidos() {
+            try {
+                const res = await fetch(API + "/pedidos.php", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+
+                if (!res.ok) throw new Error("Error cargando pedidos");
+
+                const pedidos = await res.json();
+                const div = document.getElementById("pedidos");
+                
+                if (pedidos.length === 0) {
+                    div.innerHTML = "<p>No has realizado ningún pedido aún.</p>";
+                    return;
+                }
+
+                let html = `
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Restaurante</th><th>Total</th><th>Estado</th><th>Fecha</th></tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                pedidos.forEach(p => {
+                    html += `
+                        <tr>
+                            <td>${p.id}</td>
+                            <td>${p.restaurante}</td>
+                            <td>${p.total} €</td>
+                            <td><span class="estado-${p.estado.replace(' ', '-')}">${p.estado}</span></td>
+                            <td>${new Date(p.fecha).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `</tbody></table>`;
+                div.innerHTML = html;
+                
+            } catch (err) {
+                document.getElementById("pedidos").innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+            }
+        }
+
+        cargarPedidos();
+    </script>
+</body>
+</html>

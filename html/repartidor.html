@@ -17,10 +17,16 @@
     </div>
 
     <div class="container" id="contenedor-principal">
-        <div class="loading" id="loading">
+        <!-- Botón buscar pedidos siempre visible -->
+        <div style="text-align: right; margin-bottom: 20px;">
+            <button id="btnBuscarPedidos" class="btn-buscar" onclick="cargarSiguientePedido()">🔄 Buscar pedidos disponibles</button>
+        </div>
+
+        <div class="loading" id="loading" style="display: none;">
             <div class="spinner"></div>
             <p>Buscando pedidos disponibles...</p>
         </div>
+        
         <div id="contenido-pedido"></div>
     </div>
 
@@ -52,15 +58,82 @@
         }
 
         let estaCargando = false;
+        let pedidoActual = null;
 
         function mostrarLoading(mostrar) {
             const loadingDiv = document.getElementById("loading");
-            const contenidoDiv = document.getElementById("contenido-pedido");
             if (mostrar) {
                 loadingDiv.style.display = "block";
-                contenidoDiv.innerHTML = "";
             } else {
                 loadingDiv.style.display = "none";
+            }
+        }
+
+        // Cargar pedido que ya tiene aceptado el repartidor
+        async function cargarPedidoAceptado() {
+            try {
+                const res = await fetch(API + "/pedido_aceptado_repartidor.php", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.id) {
+                    mostrarPedidoAceptado(data);
+                } else {
+                    cargarSiguientePedido();
+                }
+            } catch (err) {
+                console.error(err);
+                cargarSiguientePedido();
+            }
+        }
+
+        function mostrarPedidoAceptado(pedido) {
+            const contenedor = document.getElementById("contenido-pedido");
+            contenedor.innerHTML = `
+                <div class="pedido-aceptado-card">
+                    <h3>✅ Pedido en curso</h3>
+                    <p><strong>Nº Pedido:</strong> #${pedido.id}</p>
+                    <p><strong>Restaurante:</strong> ${pedido.restaurante}</p>
+                    <p><strong>Cliente:</strong> ${pedido.cliente}</p>
+                    <p><strong>Dirección entrega:</strong> ${pedido.cliente_direccion || "No especificada"}</p>
+                    <p><strong>Total:</strong> ${pedido.total ? pedido.total.toFixed(2) : "0"} €</p>
+                    <p><strong>Estado:</strong> <span class="estado-${pedido.estado}">${pedido.estado}</span></p>
+                    
+                    ${pedido.estado === 'en camino' ? `
+                        <div class="flex-buttons">
+                            <button class="btn-entregar" onclick="marcarEntregado(${pedido.id})">✅ Marcar como entregado</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        async function marcarEntregado(pedidoId) {
+            try {
+                const res = await fetch(API + "/actualizar_estado_pedido.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({
+                        pedido_id: pedidoId,
+                        estado: "entregado"
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    alert("✅ Pedido marcado como entregado");
+                    cargarPedidoAceptado();
+                } else {
+                    alert("❌ Error: " + data.error);
+                }
+            } catch (err) {
+                alert("Error al conectar con el servidor");
             }
         }
 
@@ -88,7 +161,8 @@
                 }
 
                 const pedido = data.pedido || data;
-                mostrarPedido(pedido);
+                pedidoActual = pedido;
+                mostrarPedidoDisponible(pedido);
                 estaCargando = false;
                 mostrarLoading(false);
 
@@ -100,7 +174,7 @@
             }
         }
 
-        function mostrarPedido(pedido) {
+        function mostrarPedidoDisponible(pedido) {
             const contenedor = document.getElementById("contenido-pedido");
             contenedor.innerHTML = `
                 <div class="pedido-card">
@@ -119,25 +193,13 @@
             `;
         }
 
-        function mostrarConfirmacion(pedidoId) {
-            const contenedor = document.getElementById("contenido-pedido");
-            contenedor.innerHTML = `
-                <div class="confirmacion-card">
-                    <h3>✅ Pedido aceptado</h3>
-                    <p>Has aceptado el pedido #${pedidoId}</p>
-                    <p>Dirígete al restaurante a recoger el pedido.</p>
-                    <button class="btn-siguiente" onclick="cargarSiguientePedido()">🔄 Buscar siguiente pedido</button>
-                </div>
-            `;
-        }
-
         function mostrarSinPedidos() {
             const contenedor = document.getElementById("contenido-pedido");
             contenedor.innerHTML = `
                 <div class="confirmacion-card">
                     <h3>📭 No hay pedidos</h3>
                     <p>No hay pedidos disponibles en tu ciudad en este momento.</p>
-                    <button class="btn-siguiente" onclick="cargarSiguientePedido()">🔄 Buscar pedidos</button>
+                    <p>Haz clic en "Buscar pedidos disponibles" para comprobar de nuevo.</p>
                 </div>
             `;
         }
@@ -148,7 +210,7 @@
                 <div class="confirmacion-card">
                     <h3 class="error">❌ Error</h3>
                     <p>${mensaje}</p>
-                    <button class="btn-siguiente" onclick="cargarSiguientePedido()">🔄 Intentar de nuevo</button>
+                    <p>Haz clic en "Buscar pedidos disponibles" para intentar de nuevo.</p>
                 </div>
             `;
         }
@@ -167,7 +229,7 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    mostrarConfirmacion(pedidoId);
+                    cargarPedidoAceptado();
                 } else {
                     alert("❌ Error: " + data.error);
                     cargarSiguientePedido();
@@ -205,7 +267,8 @@
             }
         }
 
-        cargarSiguientePedido();
+        // Cargar pedido aceptado al iniciar
+        cargarPedidoAceptado();
     </script>
 </body>
 </html>

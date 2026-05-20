@@ -1,48 +1,117 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Panel repartidor</title>
+    <title>Panel Repartidor - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
 
     <div class="topbar">
-        <h2>Repartidor</h2>
+        <h2>ComidaEnCasa - Repartidor</h2>
+        <div>
+            <span style="margin-right: 15px;">🛵 Hola, <span id="nombreUsuario"></span></span>
+            <a href="repartidor.html">📦 Mis pedidos</a>
+            <a href="repartidor_perfil.html">⚙️ Mi perfil</a>
+            <a href="#" onclick="logout()" style="color: #dc3545;">🚪 Cerrar sesión</a>
+        </div>
     </div>
 
     <div class="container">
-        <h2>Pedidos asignados</h2>
+        <h2>📦 Pedidos asignados</h2>
         <div id="pedidos"></div>
     </div>
+
+    <footer>
+        <p>ComidaEnCasa - Tu comida favorita a domicilio</p>
+    </footer>
 
     <script>
         const API = "https://backend-production-78b0.up.railway.app/api";
 
+        const token = localStorage.getItem("token");
+        if (!token) {
+            window.location.href = "login.html";
+        }
+
+        const rol = localStorage.getItem("usuario_rol");
+        if (rol !== 'repartidor') {
+            window.location.href = "login.html";
+        }
+
+        document.getElementById("nombreUsuario").textContent = localStorage.getItem("usuario_nombre") || "Repartidor";
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("usuario_rol");
+            localStorage.removeItem("usuario_nombre");
+            localStorage.removeItem("usuario_email");
+            window.location.href = "login.html";
+        }
+
         async function cargarPedidos() {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                window.location.href = "login.html";
-                return;
+            try {
+                const res = await fetch(API + "/pedidos_repartidor.php", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+
+                if (!res.ok) throw new Error("Error cargando pedidos");
+
+                const pedidos = await res.json();
+                const div = document.getElementById("pedidos");
+                
+                if (pedidos.length === 0) {
+                    div.innerHTML = "<p>No tienes pedidos asignados actualmente.</p>";
+                    return;
+                }
+
+                div.innerHTML = "";
+                
+                pedidos.forEach(p => {
+                    const card = document.createElement("div");
+                    card.className = "pedido-card";
+                    card.innerHTML = `
+                        <h3>Pedido #${p.id}</h3>
+                        <p><strong>Restaurante:</strong> ${p.restaurante}</p>
+                        <p><strong>Cliente:</strong> ${p.cliente}</p>
+                        <p><strong>Dirección:</strong> ${p.direccion || "No especificada"}</p>
+                        <p><strong>Total:</strong> ${p.total} €</p>
+                        <p><strong>Estado:</strong> <span class="estado-${p.estado.replace(' ', '-')}">${p.estado}</span></p>
+                        ${p.estado === 'en camino' ? `<button class="btn-entregar" onclick="marcarEntregado(${p.id})">✅ Marcar como entregado</button>` : ''}
+                    `;
+                    div.appendChild(card);
+                });
+                
+            } catch (err) {
+                console.log(err);
+                document.getElementById("pedidos").innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
             }
+        }
 
-            const res = await fetch(API + "/pedidos.php", {
-                headers: { "Authorization": "Bearer " + token }
-            });
-            const pedidos = await res.json();
-            const div = document.getElementById("pedidos");
-
-            pedidos.forEach(p => {
-                div.innerHTML += `
-                    <div class="card">
-                        <div class="card-content">
-                            <h3>Pedido #${p.id}</h3>
-                            <p>Restaurante: ${p.restaurante}</p>
-                            <p>Total: ${p.total} €</p>
-                            <p>Estado: ${p.estado}</p>
-                        </div>
-                    </div>
-                `;
-            });
+        async function marcarEntregado(pedidoId) {
+            try {
+                const res = await fetch(API + "/actualizar_estado_pedido.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({
+                        pedido_id: pedidoId,
+                        estado: "entregado"
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    alert("✅ Pedido marcado como entregado");
+                    cargarPedidos();
+                } else {
+                    alert("❌ Error: " + data.error);
+                }
+            } catch (err) {
+                alert("Error al conectar con el servidor");
+            }
         }
 
         cargarPedidos();

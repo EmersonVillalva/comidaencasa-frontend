@@ -50,16 +50,17 @@
                 
                 if (!res.ok) throw new Error(data.error || "Login incorrecto");
 
+                // Guardar datos en localStorage
                 localStorage.setItem("token", data.token);
                 localStorage.setItem("usuario_rol", data.usuario.rol);
                 localStorage.setItem("usuario_nombre", data.usuario.nombre);
                 localStorage.setItem("usuario_email", data.usuario.email);
                 
-                // Redirigir según el rol a su página principal
+                // Redirigir según el rol (usando los nombres de archivo existentes)
                 if (data.usuario.rol === 'restaurante') {
-                    window.location.href = "restaurante_inicio.html";
+                    window.location.href = "restaurante_panel.html";
                 } else if (data.usuario.rol === 'repartidor') {
-                    window.location.href = "repartidor_inicio.html";
+                    window.location.href = "repartidor.html";
                 } else {
                     window.location.href = "cliente_inicio.html";
                 }

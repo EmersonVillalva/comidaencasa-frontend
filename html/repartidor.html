@@ -3,6 +3,64 @@
 <head>
     <title>Panel Repartidor - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .pedido-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin: 20px auto;
+            max-width: 500px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .confirmacion-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin: 20px auto;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .confirmacion-card h3 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        .btn-aceptar {
+            background: #28a745;
+            flex: 1;
+        }
+        .btn-aceptar:hover {
+            background: #218838;
+        }
+        .btn-rechazar {
+            background: #dc3545;
+            flex: 1;
+        }
+        .btn-rechazar:hover {
+            background: #c82333;
+        }
+        .btn-siguiente {
+            background: #007bff;
+            margin-top: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff6b6b;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
 
@@ -10,15 +68,18 @@
         <h2>ComidaEnCasa - Repartidor</h2>
         <div>
             <span style="margin-right: 15px;">🛵 Hola, <span id="nombreUsuario"></span></span>
-            <a href="repartidor.html">📦 Mis pedidos</a>
+            <a href="repartidor.html">📦 Pedidos</a>
             <a href="repartidor_perfil.html">⚙️ Mi perfil</a>
             <a href="#" onclick="logout()" style="color: #dc3545;">🚪 Cerrar sesión</a>
         </div>
     </div>
 
-    <div class="container">
-        <h2>📦 Pedidos disponibles</h2>
-        <div id="pedidos"></div>
+    <div class="container" id="contenedor-principal">
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Buscando pedidos disponibles...</p>
+        </div>
+        <div id="contenido-pedido"></div>
     </div>
 
     <footer>
@@ -48,60 +109,107 @@
             window.location.href = "login.html";
         }
 
-        async function cargarPedidos() {
+        let estaCargando = false;
+
+        function mostrarLoading(mostrar) {
+            const loadingDiv = document.getElementById("loading");
+            const contenidoDiv = document.getElementById("contenido-pedido");
+            if (mostrar) {
+                loadingDiv.style.display = "block";
+                contenidoDiv.innerHTML = "";
+            } else {
+                loadingDiv.style.display = "none";
+            }
+        }
+
+        async function cargarSiguientePedido() {
+            if (estaCargando) return;
+            estaCargando = true;
+            mostrarLoading(true);
+
             try {
                 const res = await fetch(API + "/pedidos_repartidor.php", {
                     headers: { "Authorization": "Bearer " + token }
                 });
 
-                if (!res.ok) throw new Error("Error cargando pedidos");
-
                 const data = await res.json();
-                const div = document.getElementById("pedidos");
-                
-                // La respuesta es un objeto con 'pedido' o un array
-                let pedido = null;
-                
-                if (Array.isArray(data)) {
-                    // Si es array, tomar el primero
-                    pedido = data.length > 0 ? data[0] : null;
-                } else if (data.pedido) {
-                    // Si es objeto con propiedad pedido
-                    pedido = data.pedido;
-                } else if (data.id) {
-                    // Si es directamente el pedido
-                    pedido = data;
+
+                if (!res.ok) {
+                    throw new Error(data.error || "Error cargando pedido");
                 }
-                
-                if (!pedido) {
-                    div.innerHTML = "<p>No hay pedidos disponibles en tu ciudad.</p>";
+
+                // Verificar si hay pedido
+                if (!data.id && !data.pedido) {
+                    mostrarSinPedidos();
+                    estaCargando = false;
+                    mostrarLoading(false);
                     return;
                 }
 
-                div.innerHTML = "";
-                
-                // Mostrar el pedido como tarjeta
-                const card = document.createElement("div");
-                card.className = "pedido-card";
-                card.innerHTML = `
+                const pedido = data.pedido || data;
+                mostrarPedido(pedido);
+                estaCargando = false;
+                mostrarLoading(false);
+
+            } catch (err) {
+                console.error(err);
+                mostrarError(err.message);
+                estaCargando = false;
+                mostrarLoading(false);
+            }
+        }
+
+        function mostrarPedido(pedido) {
+            const contenedor = document.getElementById("contenido-pedido");
+            contenedor.innerHTML = `
+                <div class="pedido-card">
                     <h3>🍽️ Nuevo pedido disponible</h3>
-                    <p><strong>Restaurante:</strong> ${pedido.restaurante || pedido.restaurante_nombre || "No especificado"}</p>
+                    <p><strong>Restaurante:</strong> ${pedido.restaurante || "No especificado"}</p>
                     <p><strong>Cliente:</strong> ${pedido.cliente || "No especificado"}</p>
-                    <p><strong>Dirección entrega:</strong> ${pedido.cliente_direccion || pedido.direccion || "No especificada"}</p>
+                    <p><strong>Dirección entrega:</strong> ${pedido.cliente_direccion || "No especificada"}</p>
                     <p><strong>Total del pedido:</strong> ${pedido.total ? pedido.total.toFixed(2) : "0"} €</p>
                     <p><strong>Ciudad:</strong> ${pedido.ciudad || "General"}</p>
                     
                     <div style="display: flex; gap: 15px; margin-top: 20px;">
-                        <button class="btn-aceptar" onclick="aceptarPedido(${pedido.id})" style="background: #28a745; flex: 1;">✅ Aceptar pedido</button>
-                        <button class="btn-rechazar" onclick="rechazarPedido(${pedido.id})" style="background: #dc3545; flex: 1;">❌ Rechazar pedido</button>
+                        <button class="btn-aceptar" onclick="aceptarPedido(${pedido.id})">✅ Aceptar pedido</button>
+                        <button class="btn-rechazar" onclick="rechazarPedido(${pedido.id})">❌ Rechazar pedido</button>
                     </div>
-                `;
-                div.appendChild(card);
-                
-            } catch (err) {
-                console.log(err);
-                document.getElementById("pedidos").innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
-            }
+                </div>
+            `;
+        }
+
+        function mostrarConfirmacion(pedidoId) {
+            const contenedor = document.getElementById("contenido-pedido");
+            contenedor.innerHTML = `
+                <div class="confirmacion-card">
+                    <h3>✅ Pedido aceptado</h3>
+                    <p>Has aceptado el pedido #${pedidoId}</p>
+                    <p>Dirígete al restaurante a recoger el pedido.</p>
+                    <button class="btn-siguiente" onclick="cargarSiguientePedido()">🔄 Buscar siguiente pedido</button>
+                </div>
+            `;
+        }
+
+        function mostrarSinPedidos() {
+            const contenedor = document.getElementById("contenido-pedido");
+            contenedor.innerHTML = `
+                <div class="confirmacion-card">
+                    <h3>📭 No hay pedidos</h3>
+                    <p>No hay pedidos disponibles en tu ciudad en este momento.</p>
+                    <button class="btn-siguiente" onclick="cargarSiguientePedido()">🔄 Buscar pedidos</button>
+                </div>
+            `;
+        }
+
+        function mostrarError(mensaje) {
+            const contenedor = document.getElementById("contenido-pedido");
+            contenedor.innerHTML = `
+                <div class="confirmacion-card" style="border-color: #dc3545;">
+                    <h3 style="color: #dc3545;">❌ Error</h3>
+                    <p>${mensaje}</p>
+                    <button class="btn-siguiente" onclick="cargarSiguientePedido()">🔄 Intentar de nuevo</button>
+                </div>
+            `;
         }
 
         async function aceptarPedido(pedidoId) {
@@ -114,19 +222,18 @@
                     },
                     body: JSON.stringify({ pedido_id: pedidoId })
                 });
-                
+
                 const data = await res.json();
-                
+
                 if (res.ok) {
-                    alert("✅ " + data.mensaje + " - Pedido #" + data.pedido_id);
-                    cargarPedidos();
+                    mostrarConfirmacion(pedidoId);
                 } else {
                     alert("❌ Error: " + data.error);
-                    cargarPedidos();
+                    cargarSiguientePedido();
                 }
             } catch (err) {
                 alert("Error al conectar con el servidor");
-                cargarPedidos();
+                cargarSiguientePedido();
             }
         }
 
@@ -140,21 +247,26 @@
                     },
                     body: JSON.stringify({ pedido_id: pedidoId })
                 });
-                
+
                 if (res.ok) {
-                    alert("❌ Pedido rechazado");
-                    cargarPedidos();
+                    // Mostrar loading y cargar siguiente pedido
+                    mostrarLoading(true);
+                    setTimeout(() => {
+                        cargarSiguientePedido();
+                    }, 500);
                 } else {
                     const data = await res.json();
                     alert("❌ Error: " + data.error);
+                    cargarSiguientePedido();
                 }
             } catch (err) {
                 alert("Error al conectar con el servidor");
-                cargarPedidos();
+                cargarSiguientePedido();
             }
         }
 
-        cargarPedidos();
+        // Iniciar
+        cargarSiguientePedido();
     </script>
 </body>
 </html>

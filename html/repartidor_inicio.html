@@ -67,6 +67,7 @@
                     throw new Error(data.error || "Error cargando pedido");
                 }
 
+                // La respuesta ahora es { pedido: {...} } o { pedido: null }
                 if (!data.pedido) {
                     mostrarMensaje(data.mensaje || "No hay pedidos disponibles en tu ciudad");
                     estaCargando = false;
@@ -90,12 +91,10 @@
                 <div class="pedido-card" style="max-width: 500px; margin: 0 auto;">
                     <h3>🍽️ Nuevo pedido disponible</h3>
                     <p><strong>Restaurante:</strong> ${pedido.restaurante}</p>
-                    <p><strong>Dirección restaurante:</strong> ${pedido.restaurante_direccion}</p>
                     <p><strong>Cliente:</strong> ${pedido.cliente}</p>
                     <p><strong>Dirección entrega:</strong> ${pedido.cliente_direccion}</p>
-                    <p><strong>Distancia aproximada:</strong> ${pedido.distancia}</p>
                     <p><strong>Total del pedido:</strong> ${pedido.total.toFixed(2)} €</p>
-                    <p><strong>Ganancia estimada:</strong> ${(pedido.total * 0.2).toFixed(2)} €</p>
+                    <p><strong>Ciudad:</strong> ${pedido.ciudad}</p>
                     
                     <div style="display: flex; gap: 15px; margin-top: 20px;">
                         <button onclick="aceptarPedido()" style="background: #28a745; flex: 1;">✅ Aceptar pedido</button>
@@ -164,14 +163,17 @@
                     body: JSON.stringify({ pedido_id: pedidoActual.id })
                 });
 
-                const data = await res.json();
-
-                mostrarMensaje("Pedido rechazado, buscando siguiente...");
-                pedidoActual = null;
-                setTimeout(() => {
+                if (res.ok) {
+                    mostrarMensaje("Pedido rechazado, buscando siguiente...");
+                    pedidoActual = null;
+                    setTimeout(() => {
+                        cargarSiguientePedido();
+                    }, 1000);
+                } else {
+                    const data = await res.json();
+                    alert("Error: " + data.error);
                     cargarSiguientePedido();
-                }, 1000);
-
+                }
             } catch (err) {
                 alert("Error al rechazar pedido");
                 cargarSiguientePedido();

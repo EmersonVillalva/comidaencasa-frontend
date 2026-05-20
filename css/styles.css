@@ -61,15 +61,11 @@ body {
     letter-spacing: -0.5px;
 }
 
-.topbar h2::before {
-    content: "🍕";
-    margin-right: 8px;
-}
-
 .topbar div {
     display: flex;
     gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .topbar a {
@@ -238,13 +234,6 @@ body {
     line-height: 1.4;
 }
 
-.card-content .precio {
-    font-weight: 700;
-    color: var(--primary-color);
-    font-size: 18px;
-    margin-top: 8px;
-}
-
 /* ============================================ */
 /* BUTTONS */
 /* ============================================ */
@@ -267,20 +256,46 @@ button:hover {
     box-shadow: var(--shadow-sm);
 }
 
-.btn-secondary {
-    background: var(--gray-color);
+.btn-agregar {
+    background: var(--primary-color);
+    width: 100%;
+    margin-top: 10px;
 }
 
-.btn-secondary:hover {
-    background: #5a6268;
+.btn-agregar:hover {
+    background: var(--primary-dark);
 }
 
-.btn-success {
+.btn-confirmar {
+    width: 100%;
+    margin-top: 15px;
     background: var(--success-color);
+    padding: 12px;
+    font-size: 16px;
 }
 
-.btn-success:hover {
+.btn-confirmar:hover {
     background: #218838;
+}
+
+.btn-entregar {
+    background: var(--success-color);
+    margin-top: 10px;
+}
+
+.btn-entregar:hover {
+    background: #218838;
+}
+
+.btn-actualizar {
+    background: var(--info-color);
+    padding: 5px 10px;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+.btn-actualizar:hover {
+    background: #138496;
 }
 
 /* ============================================ */
@@ -537,6 +552,10 @@ tr:hover td {
     border-radius: 12px;
 }
 
+.carrito-item-info {
+    flex: 2;
+}
+
 .carrito-item-info h4 {
     font-size: 14px;
     margin-bottom: 4px;
@@ -562,6 +581,12 @@ tr:hover td {
     border-radius: 6px;
 }
 
+.carrito-item-precio {
+    width: 70px;
+    text-align: right;
+    font-weight: bold;
+}
+
 .carrito-total {
     margin-top: 20px;
     padding-top: 16px;
@@ -570,15 +595,6 @@ tr:hover td {
     font-size: 20px;
     font-weight: 700;
     color: var(--primary-color);
-}
-
-.btn-confirmar {
-    width: 100%;
-    margin-top: 20px;
-    background: var(--success-color);
-    padding: 14px;
-    font-size: 16px;
-    font-weight: 700;
 }
 
 /* ============================================ */
@@ -652,6 +668,34 @@ tr:hover td {
 }
 
 /* ============================================ */
+/* PEDIDO CARD (REPARTIDOR) */
+/* ============================================ */
+
+.pedido-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.pedido-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.pedido-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 12px;
+}
+
+.pedido-card p {
+    margin-bottom: 8px;
+    color: var(--dark-color);
+}
+
+/* ============================================ */
 /* FOOTER */
 /* ============================================ */
 
@@ -668,7 +712,9 @@ footer {
 /* MENSAJES */
 /* ============================================ */
 
-.mensaje-exito, #error, .mensaje-error {
+.mensaje-exito {
+    background: #d4edda;
+    color: #155724;
     padding: 12px;
     border-radius: 10px;
     margin-top: 16px;
@@ -676,14 +722,14 @@ footer {
     font-weight: 500;
 }
 
-.mensaje-exito {
-    background: #d4edda;
-    color: #155724;
-}
-
 .mensaje-error, #error {
     background: #f8d7da;
     color: #721c24;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 16px;
+    text-align: center;
+    font-weight: 500;
 }
 
 /* ============================================ */
@@ -712,7 +758,6 @@ footer {
     }
     
     .topbar div {
-        flex-wrap: wrap;
         justify-content: center;
     }
     

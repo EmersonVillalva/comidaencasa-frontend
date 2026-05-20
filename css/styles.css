@@ -278,15 +278,6 @@ button:hover {
     background: #218838;
 }
 
-.btn-entregar {
-    background: var(--success-color);
-    margin-top: 10px;
-}
-
-.btn-entregar:hover {
-    background: #218838;
-}
-
 .btn-actualizar {
     background: var(--info-color);
     padding: 5px 10px;
@@ -680,6 +671,21 @@ tr:hover td {
     box-shadow: var(--shadow-md);
 }
 
+.pedido-aceptado-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin: 20px auto;
+    max-width: 500px;
+    box-shadow: var(--shadow-md);
+    border-left: 4px solid var(--success-color);
+}
+
+.pedido-aceptado-card h3 {
+    color: var(--success-color);
+    margin-bottom: 15px;
+}
+
 .confirmacion-card {
     background: white;
     border-radius: 16px;
@@ -724,6 +730,22 @@ tr:hover td {
 
 .btn-siguiente:hover {
     background: #138496;
+}
+
+.btn-buscar {
+    background: var(--info-color);
+}
+
+.btn-buscar:hover {
+    background: #138496;
+}
+
+.btn-entregar {
+    background: var(--success-color);
+}
+
+.btn-entregar:hover {
+    background: #218838;
 }
 
 .loading {
@@ -865,7 +887,7 @@ footer {
         font-size: 12px;
     }
     
-    .pedido-card, .confirmacion-card {
+    .pedido-card, .confirmacion-card, .pedido-aceptado-card {
         margin: 20px 16px;
     }
     

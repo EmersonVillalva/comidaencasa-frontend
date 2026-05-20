@@ -1,44 +1,73 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Restaurantes</title>
+    <title>Restaurantes - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
 
     <div class="topbar">
-        <h2>Restaurantes</h2>
+        <h2>ComidaEnCasa</h2>
         <div>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="pedidos.html">Pedidos</a>
+            <span style="margin-right: 15px;">👤 Hola, <span id="nombreUsuario"></span></span>
+            <a href="cliente_inicio.html">🏠 Inicio</a>
+            <a href="restaurantes.html">🍽️ Restaurantes</a>
+            <a href="cliente_pedidos.html">📦 Mis pedidos</a>
+            <a href="cliente_perfil.html">⚙️ Mi perfil</a>
+            <a href="#" onclick="logout()" style="color: #dc3545;">🚪 Cerrar sesión</a>
         </div>
     </div>
 
     <div class="container">
+        <h2>Restaurantes</h2>
         <div class="grid" id="restaurantes"></div>
     </div>
+
+    <footer>
+        <p>ComidaEnCasa - Tu comida favorita a domicilio</p>
+    </footer>
 
     <script>
         const API = "https://backend-production-78b0.up.railway.app/api";
 
-        async function cargarRestaurantes() {
-            const res = await fetch(API + "/restaurantes.php");
-            const restaurantes = await res.json();
-            const grid = document.getElementById("restaurantes");
+        const token = localStorage.getItem("token");
+        if (!token) {
+            window.location.href = "login.html";
+        }
 
-            restaurantes.forEach(r => {
-                const card = document.createElement("div");
-                card.className = "card";
-                card.innerHTML = `
-                    <img src="https://picsum.photos/300/200?random=${r.id}">
-                    <div class="card-content">
-                        <h3>${r.nombre}</h3>
-                        <p>${r.descripcion || ""}</p>
-                        <button onclick="verMenu(${r.id})">Ver menú</button>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
+        document.getElementById("nombreUsuario").textContent = localStorage.getItem("usuario_nombre") || "Usuario";
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("usuario_rol");
+            localStorage.removeItem("usuario_nombre");
+            localStorage.removeItem("usuario_email");
+            window.location.href = "login.html";
+        }
+
+        async function cargarRestaurantes() {
+            try {
+                const res = await fetch(API + "/restaurantes.php");
+                const restaurantes = await res.json();
+                const grid = document.getElementById("restaurantes");
+                grid.innerHTML = "";
+
+                restaurantes.forEach(r => {
+                    const card = document.createElement("div");
+                    card.className = "card";
+                    card.innerHTML = `
+                        <img src="https://picsum.photos/300/200?random=${r.id}">
+                        <div class="card-content">
+                            <h3>${r.nombre}</h3>
+                            <p>${r.descripcion || ""}</p>
+                            <button onclick="verMenu(${r.id})">Ver menú</button>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (err) {
+                console.log(err);
+            }
         }
 
         function verMenu(id) {

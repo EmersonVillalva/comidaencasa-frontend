@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mi perfil - ComidaEnCasa</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <h2>ComidaEnCasa</h2>
+        <div>
+            <span style="margin-right: 15px;">👤 Hola, <span id="nombreUsuario"></span></span>
+            <a href="cliente_inicio.html">🏠 Inicio</a>
+            <a href="restaurantes.html">🍽️ Restaurantes</a>
+            <a href="cliente_pedidos.html">📦 Mis pedidos</a>
+            <a href="cliente_perfil.html">⚙️ Mi perfil</a>
+            <a href="#" onclick="logout()" style="color: #dc3545;">🚪 Cerrar sesión</a>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <h2>Mi perfil</h2>
+        <input id="nombre" placeholder="Nombre completo">
+        <input id="email" type="email" placeholder="Email">
+        <input id="direccion" placeholder="Dirección">
+        <button onclick="guardar()">Guardar cambios</button>
+        <p id="mensaje"></p>
+    </div>
+
+    <footer>
+        <p>ComidaEnCasa - Tu comida favorita a domicilio</p>
+    </footer>
+
+    <script>
+        const API = "https://backend-production-78b0.up.railway.app/api";
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            window.location.href = "login.html";
+        }
+
+        document.getElementById("nombreUsuario").textContent = localStorage.getItem("usuario_nombre") || "Usuario";
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("usuario_rol");
+            localStorage.removeItem("usuario_nombre");
+            localStorage.removeItem("usuario_email");
+            window.location.href = "login.html";
+        }
+
+        async function cargarPerfil() {
+            try {
+                const res = await fetch(API + "/perfil.php", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const data = await res.json();
+                document.getElementById("nombre").value = data.nombre || "";
+                document.getElementById("email").value = data.email || "";
+                document.getElementById("direccion").value = data.direccion || "";
+            } catch (err) {
+                mostrarMensaje("Error al cargar perfil", "error");
+            }
+        }
+
+        async function guardar() {
+            const nombre = document.getElementById("nombre").value;
+            const email = document.getElementById("email").value;
+            const direccion = document.getElementById("direccion").value;
+
+            try {
+                const res = await fetch(API + "/perfil.php", {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({ nombre, email, direccion })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    localStorage.setItem("usuario_nombre", nombre);
+                    localStorage.setItem("usuario_email", email);
+                    document.getElementById("nombreUsuario").textContent = nombre;
+                    mostrarMensaje("Perfil actualizado correctamente", "exito");
+                } else {
+                    mostrarMensaje(data.error || "Error al actualizar", "error");
+                }
+            } catch (err) {
+                mostrarMensaje("Error de conexión", "error");
+            }
+        }
+
+        function mostrarMensaje(msg, tipo) {
+            const msgDiv = document.getElementById("mensaje");
+            msgDiv.textContent = msg;
+            msgDiv.className = tipo === "error" ? "mensaje-error" : "mensaje-exito";
+            setTimeout(() => {
+                msgDiv.textContent = "";
+            }, 3000);
+        }
+
+        cargarPerfil();
+    </script>
+</body>
+</html>

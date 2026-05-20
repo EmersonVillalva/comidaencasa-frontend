@@ -17,7 +17,7 @@
     </div>
 
     <div class="container">
-        <h2>📦 Pedidos asignados</h2>
+        <h2>📦 Pedidos disponibles</h2>
         <div id="pedidos"></div>
     </div>
 
@@ -56,30 +56,47 @@
 
                 if (!res.ok) throw new Error("Error cargando pedidos");
 
-                const pedidos = await res.json();
+                const data = await res.json();
                 const div = document.getElementById("pedidos");
                 
-                if (pedidos.length === 0) {
-                    div.innerHTML = "<p>No tienes pedidos asignados actualmente.</p>";
+                // La respuesta es un objeto con 'pedido' o un array
+                let pedido = null;
+                
+                if (Array.isArray(data)) {
+                    // Si es array, tomar el primero
+                    pedido = data.length > 0 ? data[0] : null;
+                } else if (data.pedido) {
+                    // Si es objeto con propiedad pedido
+                    pedido = data.pedido;
+                } else if (data.id) {
+                    // Si es directamente el pedido
+                    pedido = data;
+                }
+                
+                if (!pedido) {
+                    div.innerHTML = "<p>No hay pedidos disponibles en tu ciudad.</p>";
                     return;
                 }
 
                 div.innerHTML = "";
                 
-                pedidos.forEach(p => {
-                    const card = document.createElement("div");
-                    card.className = "pedido-card";
-                    card.innerHTML = `
-                        <h3>Pedido #${p.id}</h3>
-                        <p><strong>Restaurante:</strong> ${p.restaurante}</p>
-                        <p><strong>Cliente:</strong> ${p.cliente}</p>
-                        <p><strong>Dirección:</strong> ${p.direccion || "No especificada"}</p>
-                        <p><strong>Total:</strong> ${p.total} €</p>
-                        <p><strong>Estado:</strong> <span class="estado-${p.estado.replace(' ', '-')}">${p.estado}</span></p>
-                        ${p.estado === 'en camino' ? `<button class="btn-entregar" onclick="marcarEntregado(${p.id})">✅ Marcar como entregado</button>` : ''}
-                    `;
-                    div.appendChild(card);
-                });
+                // Mostrar el pedido como tarjeta
+                const card = document.createElement("div");
+                card.className = "pedido-card";
+                card.innerHTML = `
+                    <h3>🍽️ Nuevo pedido disponible</h3>
+                    <p><strong>Restaurante:</strong> ${pedido.restaurante || pedido.restaurante_nombre || "No especificado"}</p>
+                    <p><strong>Cliente:</strong> ${pedido.cliente || "No especificado"}</p>
+                    <p><strong>Dirección entrega:</strong> ${pedido.cliente_direccion || pedido.direccion || "No especificada"}</p>
+                    <p><strong>Total del pedido:</strong> ${pedido.total ? pedido.total.toFixed(2) : "0"} €</p>
+                    <p><strong>Ciudad:</strong> ${pedido.ciudad || "General"}</p>
+                    
+                    <div style="display: flex; gap: 15px; margin-top: 20px;">
+                        <button class="btn-aceptar" onclick="aceptarPedido(${pedido.id})" style="background: #28a745; flex: 1;">✅ Aceptar pedido</button>
+                        <button class="btn-rechazar" onclick="rechazarPedido(${pedido.id})" style="background: #dc3545; flex: 1;">❌ Rechazar pedido</button>
+                    </div>
+                `;
+                div.appendChild(card);
                 
             } catch (err) {
                 console.log(err);
@@ -87,30 +104,53 @@
             }
         }
 
-        async function marcarEntregado(pedidoId) {
+        async function aceptarPedido(pedidoId) {
             try {
-                const res = await fetch(API + "/actualizar_estado_pedido.php", {
+                const res = await fetch(API + "/aceptar_pedido.php", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "Authorization": "Bearer " + token
                     },
-                    body: JSON.stringify({
-                        pedido_id: pedidoId,
-                        estado: "entregado"
-                    })
+                    body: JSON.stringify({ pedido_id: pedidoId })
                 });
                 
                 const data = await res.json();
                 
                 if (res.ok) {
-                    alert("✅ Pedido marcado como entregado");
+                    alert("✅ " + data.mensaje + " - Pedido #" + data.pedido_id);
                     cargarPedidos();
                 } else {
+                    alert("❌ Error: " + data.error);
+                    cargarPedidos();
+                }
+            } catch (err) {
+                alert("Error al conectar con el servidor");
+                cargarPedidos();
+            }
+        }
+
+        async function rechazarPedido(pedidoId) {
+            try {
+                const res = await fetch(API + "/rechazar_pedido.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({ pedido_id: pedidoId })
+                });
+                
+                if (res.ok) {
+                    alert("❌ Pedido rechazado");
+                    cargarPedidos();
+                } else {
+                    const data = await res.json();
                     alert("❌ Error: " + data.error);
                 }
             } catch (err) {
                 alert("Error al conectar con el servidor");
+                cargarPedidos();
             }
         }
 

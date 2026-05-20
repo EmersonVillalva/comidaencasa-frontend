@@ -53,14 +53,15 @@
                 localStorage.setItem("token", data.token);
                 localStorage.setItem("usuario_rol", data.usuario.rol);
                 localStorage.setItem("usuario_nombre", data.usuario.nombre);
+                localStorage.setItem("usuario_email", data.usuario.email);
                 
-                // Redirigir según el rol
+                // Redirigir según el rol a su página principal
                 if (data.usuario.rol === 'restaurante') {
-                    window.location.href = "restaurante_panel.html";
+                    window.location.href = "restaurante_inicio.html";
                 } else if (data.usuario.rol === 'repartidor') {
-                    window.location.href = "repartidor.html";
+                    window.location.href = "repartidor_inicio.html";
                 } else {
-                    window.location.href = "dashboard.html";
+                    window.location.href = "cliente_inicio.html";
                 }
                 
             } catch (err) {

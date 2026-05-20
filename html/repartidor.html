@@ -19,15 +19,20 @@
     <div class="container" id="contenedor-principal">
         <!-- Botón buscar pedidos siempre visible -->
         <div style="text-align: right; margin-bottom: 20px;">
-            <button id="btnBuscarPedidos" class="btn-buscar" onclick="cargarSiguientePedido()">🔄 Buscar pedidos disponibles</button>
+            <button id="btnBuscarPedidos" class="btn-buscar" onclick="buscarNuevosPedidos()">🔄 Buscar pedidos disponibles</button>
         </div>
 
-        <div class="loading" id="loading" style="display: none;">
-            <div class="spinner"></div>
-            <p>Buscando pedidos disponibles...</p>
+        <!-- Sección de pedidos disponibles (nuevos) -->
+        <div id="seccion-disponibles" style="display: none;">
+            <h2>📦 Pedidos disponibles</h2>
+            <div id="pedidos-disponibles"></div>
         </div>
-        
-        <div id="contenido-pedido"></div>
+
+        <!-- Sección de pedidos en curso (aceptados) -->
+        <div id="seccion-en-curso">
+            <h2>✅ Mis pedidos en curso</h2>
+            <div id="pedidos-en-curso"></div>
+        </div>
     </div>
 
     <footer>
@@ -58,56 +63,53 @@
         }
 
         let estaCargando = false;
-        let pedidoActual = null;
 
-        function mostrarLoading(mostrar) {
-            const loadingDiv = document.getElementById("loading");
-            if (mostrar) {
-                loadingDiv.style.display = "block";
-            } else {
-                loadingDiv.style.display = "none";
-            }
-        }
-
-        // Cargar pedido que ya tiene aceptado el repartidor
-        async function cargarPedidoAceptado() {
+        // Cargar todos los pedidos aceptados por el repartidor
+        async function cargarPedidosEnCurso() {
             try {
-                const res = await fetch(API + "/pedido_aceptado_repartidor.php", {
+                const res = await fetch(API + "/pedidos_aceptados_repartidor.php", {
                     headers: { "Authorization": "Bearer " + token }
                 });
 
-                const data = await res.json();
-
-                if (res.ok && data.id) {
-                    mostrarPedidoAceptado(data);
-                } else {
-                    cargarSiguientePedido();
+                const pedidos = await res.json();
+                const contenedor = document.getElementById("pedidos-en-curso");
+                
+                if (!res.ok) {
+                    contenedor.innerHTML = `<p class="error-mensaje">Error: ${pedidos.error || "No se pudieron cargar los pedidos"}</p>`;
+                    return;
                 }
+
+                if (pedidos.length === 0) {
+                    contenedor.innerHTML = '<p class="sin-pedidos">No tienes pedidos en curso actualmente.</p>';
+                    return;
+                }
+
+                contenedor.innerHTML = "";
+                
+                pedidos.forEach(pedido => {
+                    const card = document.createElement("div");
+                    card.className = "pedido-aceptado-card";
+                    card.innerHTML = `
+                        <h3>📦 Pedido #${pedido.id}</h3>
+                        <p><strong>Restaurante:</strong> ${pedido.restaurante}</p>
+                        <p><strong>Cliente:</strong> ${pedido.cliente}</p>
+                        <p><strong>Dirección entrega:</strong> ${pedido.cliente_direccion || "No especificada"}</p>
+                        <p><strong>Total:</strong> ${pedido.total ? pedido.total.toFixed(2) : "0"} €</p>
+                        <p><strong>Estado:</strong> <span class="estado-${pedido.estado}">${pedido.estado}</span></p>
+                        
+                        ${pedido.estado === 'en camino' ? `
+                            <div class="flex-buttons">
+                                <button class="btn-entregar" onclick="marcarEntregado(${pedido.id})">✅ Marcar como entregado</button>
+                            </div>
+                        ` : ''}
+                    `;
+                    contenedor.appendChild(card);
+                });
+                
             } catch (err) {
                 console.error(err);
-                cargarSiguientePedido();
+                document.getElementById("pedidos-en-curso").innerHTML = `<p class="error-mensaje">Error al cargar pedidos: ${err.message}</p>`;
             }
-        }
-
-        function mostrarPedidoAceptado(pedido) {
-            const contenedor = document.getElementById("contenido-pedido");
-            contenedor.innerHTML = `
-                <div class="pedido-aceptado-card">
-                    <h3>✅ Pedido en curso</h3>
-                    <p><strong>Nº Pedido:</strong> #${pedido.id}</p>
-                    <p><strong>Restaurante:</strong> ${pedido.restaurante}</p>
-                    <p><strong>Cliente:</strong> ${pedido.cliente}</p>
-                    <p><strong>Dirección entrega:</strong> ${pedido.cliente_direccion || "No especificada"}</p>
-                    <p><strong>Total:</strong> ${pedido.total ? pedido.total.toFixed(2) : "0"} €</p>
-                    <p><strong>Estado:</strong> <span class="estado-${pedido.estado}">${pedido.estado}</span></p>
-                    
-                    ${pedido.estado === 'en camino' ? `
-                        <div class="flex-buttons">
-                            <button class="btn-entregar" onclick="marcarEntregado(${pedido.id})">✅ Marcar como entregado</button>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
         }
 
         async function marcarEntregado(pedidoId) {
@@ -128,7 +130,7 @@
                 
                 if (res.ok) {
                     alert("✅ Pedido marcado como entregado");
-                    cargarPedidoAceptado();
+                    cargarPedidosEnCurso();
                 } else {
                     alert("❌ Error: " + data.error);
                 }
@@ -137,10 +139,16 @@
             }
         }
 
-        async function cargarSiguientePedido() {
+        // Buscar nuevos pedidos disponibles
+        async function buscarNuevosPedidos() {
             if (estaCargando) return;
             estaCargando = true;
-            mostrarLoading(true);
+            
+            const seccionDisponibles = document.getElementById("seccion-disponibles");
+            const pedidosDiv = document.getElementById("pedidos-disponibles");
+            
+            seccionDisponibles.style.display = "block";
+            pedidosDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Buscando pedidos disponibles...</p></div>';
 
             try {
                 const res = await fetch(API + "/pedidos_repartidor.php", {
@@ -153,66 +161,45 @@
                     throw new Error(data.error || "Error cargando pedido");
                 }
 
-                if (!data.id && !data.pedido) {
-                    mostrarSinPedidos();
+                // Verificar si hay pedidos disponibles
+                if (!data.pedidos || data.pedidos.length === 0) {
+                    pedidosDiv.innerHTML = '<p class="sin-pedidos">No hay pedidos disponibles en tu ciudad en este momento.</p>';
                     estaCargando = false;
-                    mostrarLoading(false);
                     return;
                 }
 
-                const pedido = data.pedido || data;
-                pedidoActual = pedido;
-                mostrarPedidoDisponible(pedido);
+                mostrarPedidosDisponibles(data.pedidos);
                 estaCargando = false;
-                mostrarLoading(false);
 
             } catch (err) {
                 console.error(err);
-                mostrarError(err.message);
+                pedidosDiv.innerHTML = `<p class="error-mensaje">Error: ${err.message}</p>`;
                 estaCargando = false;
-                mostrarLoading(false);
             }
         }
 
-        function mostrarPedidoDisponible(pedido) {
-            const contenedor = document.getElementById("contenido-pedido");
-            contenedor.innerHTML = `
-                <div class="pedido-card">
-                    <h3>🍽️ Nuevo pedido disponible</h3>
-                    <p><strong>Restaurante:</strong> ${pedido.restaurante || "No especificado"}</p>
-                    <p><strong>Cliente:</strong> ${pedido.cliente || "No especificado"}</p>
+        function mostrarPedidosDisponibles(pedidos) {
+            const pedidosDiv = document.getElementById("pedidos-disponibles");
+            pedidosDiv.innerHTML = "";
+            
+            pedidos.forEach(pedido => {
+                const card = document.createElement("div");
+                card.className = "pedido-card";
+                card.innerHTML = `
+                    <h3>🍽️ ${pedido.restaurante}</h3>
+                    <p><strong>Cliente:</strong> ${pedido.cliente}</p>
                     <p><strong>Dirección entrega:</strong> ${pedido.cliente_direccion || "No especificada"}</p>
-                    <p><strong>Total del pedido:</strong> ${pedido.total ? pedido.total.toFixed(2) : "0"} €</p>
+                    <p><strong>Total:</strong> ${pedido.total ? pedido.total.toFixed(2) : "0"} €</p>
                     <p><strong>Ciudad:</strong> ${pedido.ciudad || "General"}</p>
+                    <p><strong>Distancia:</strong> ${pedido.distancia || "No calculada"}</p>
                     
                     <div class="flex-buttons">
                         <button class="btn-aceptar" onclick="aceptarPedido(${pedido.id})">✅ Aceptar pedido</button>
-                        <button class="btn-rechazar" onclick="rechazarPedido(${pedido.id})">❌ Rechazar pedido</button>
+                        <button class="btn-rechazar" onclick="rechazarPedido(${pedido.id}, this)">❌ Rechazar pedido</button>
                     </div>
-                </div>
-            `;
-        }
-
-        function mostrarSinPedidos() {
-            const contenedor = document.getElementById("contenido-pedido");
-            contenedor.innerHTML = `
-                <div class="confirmacion-card">
-                    <h3>📭 No hay pedidos</h3>
-                    <p>No hay pedidos disponibles en tu ciudad en este momento.</p>
-                    <p>Haz clic en "Buscar pedidos disponibles" para comprobar de nuevo.</p>
-                </div>
-            `;
-        }
-
-        function mostrarError(mensaje) {
-            const contenedor = document.getElementById("contenido-pedido");
-            contenedor.innerHTML = `
-                <div class="confirmacion-card">
-                    <h3 class="error">❌ Error</h3>
-                    <p>${mensaje}</p>
-                    <p>Haz clic en "Buscar pedidos disponibles" para intentar de nuevo.</p>
-                </div>
-            `;
+                `;
+                pedidosDiv.appendChild(card);
+            });
         }
 
         async function aceptarPedido(pedidoId) {
@@ -229,18 +216,20 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    cargarPedidoAceptado();
+                    alert("✅ Pedido aceptado correctamente");
+                    // Ocultar sección de disponibles
+                    document.getElementById("seccion-disponibles").style.display = "none";
+                    // Recargar pedidos en curso
+                    cargarPedidosEnCurso();
                 } else {
                     alert("❌ Error: " + data.error);
-                    cargarSiguientePedido();
                 }
             } catch (err) {
                 alert("Error al conectar con el servidor");
-                cargarSiguientePedido();
             }
         }
 
-        async function rechazarPedido(pedidoId) {
+        async function rechazarPedido(pedidoId, boton) {
             try {
                 const res = await fetch(API + "/rechazar_pedido.php", {
                     method: "POST",
@@ -252,23 +241,28 @@
                 });
 
                 if (res.ok) {
-                    mostrarLoading(true);
-                    setTimeout(() => {
-                        cargarSiguientePedido();
-                    }, 500);
+                    // Eliminar el pedido de la lista visualmente
+                    const card = boton.closest('.pedido-card');
+                    if (card) {
+                        card.remove();
+                    }
+                    
+                    // Verificar si quedan pedidos disponibles
+                    const pedidosRestantes = document.querySelectorAll('#pedidos-disponibles .pedido-card');
+                    if (pedidosRestantes.length === 0) {
+                        document.getElementById("pedidos-disponibles").innerHTML = '<p class="sin-pedidos">No hay más pedidos disponibles en tu ciudad en este momento.</p>';
+                    }
                 } else {
                     const data = await res.json();
                     alert("❌ Error: " + data.error);
-                    cargarSiguientePedido();
                 }
             } catch (err) {
                 alert("Error al conectar con el servidor");
-                cargarSiguientePedido();
             }
         }
 
-        // Cargar pedido aceptado al iniciar
-        cargarPedidoAceptado();
+        // Cargar pedidos en curso al iniciar
+        cargarPedidosEnCurso();
     </script>
 </body>
 </html>

@@ -21,15 +21,18 @@
     </div>
 
     <div class="container" id="main-content" tabindex="-1">
+        <!-- Botón buscar pedidos siempre visible -->
         <div style="text-align: right; margin-bottom: 20px;">
             <button id="btnBuscarPedidos" class="btn-buscar" onclick="buscarNuevosPedidos()">🔄 Buscar pedidos disponibles</button>
         </div>
 
+        <!-- Sección de pedidos disponibles (nuevos) -->
         <div id="seccion-disponibles" style="display: none;">
             <h2>📦 Pedidos disponibles</h2>
             <div id="pedidos-disponibles"></div>
         </div>
 
+        <!-- Sección de pedidos en curso (aceptados) -->
         <div id="seccion-en-curso">
             <h2>✅ Mis pedidos en curso</h2>
             <div id="pedidos-en-curso"></div>
@@ -49,7 +52,6 @@
                 event.preventDefault();
                 return;
             }
-            console.warn('Error no manejado:', event.reason);
         });
 
         const API = "https://backend-production-78b0.up.railway.app/api";
@@ -87,11 +89,12 @@
             });
         }
 
+        // Cargar pedidos en curso (aceptados)
         async function cargarPedidosEnCurso() {
             const contenedor = document.getElementById("pedidos-en-curso");
             if (!contenedor) return;
             
-            contenedor.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+            contenedor.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando pedidos en curso...</p></div>';
 
             try {
                 const res = await fetch(API + "/pedidos_aceptados_repartidor.php", {
@@ -99,7 +102,7 @@
                 });
 
                 if (!res.ok) {
-                    contenedor.innerHTML = '<p class="error-mensaje">Error al cargar pedidos</p>';
+                    contenedor.innerHTML = '<p class="error-mensaje">Error al cargar pedidos en curso</p>';
                     return;
                 }
 
@@ -119,7 +122,7 @@
                         <h3>📦 Pedido #${pedido.id}</h3>
                         <p><strong>Restaurante:</strong> ${escapeHtml(pedido.restaurante)}</p>
                         <p><strong>Cliente:</strong> ${escapeHtml(pedido.cliente)}</p>
-                        <p><strong>Dirección:</strong> ${escapeHtml(pedido.cliente_direccion)}</p>
+                        <p><strong>Dirección entrega:</strong> ${escapeHtml(pedido.cliente_direccion)}</p>
                         <p><strong>Total:</strong> ${pedido.total.toFixed(2)} €</p>
                         <p><strong>Estado:</strong> <span class="estado-${pedido.estado.replace(' ', '-')}">${pedido.estado}</span></p>
                         ${pedido.estado === 'en camino' ? `<button class="btn-entregar" onclick="marcarEntregado(${pedido.id})">✅ Marcar como entregado</button>` : ''}
@@ -128,7 +131,7 @@
                 }
                 
             } catch (err) {
-                console.error(err);
+                console.error("Error en cargarPedidosEnCurso:", err);
                 contenedor.innerHTML = '<p class="error-mensaje">Error al conectar con el servidor</p>';
             }
         }
@@ -141,7 +144,10 @@
                         "Content-Type": "application/json",
                         "Authorization": "Bearer " + token
                     },
-                    body: JSON.stringify({ pedido_id: pedidoId, estado: "entregado" })
+                    body: JSON.stringify({
+                        pedido_id: pedidoId,
+                        estado: "entregado"
+                    })
                 });
                 
                 const data = await res.json();
@@ -153,11 +159,12 @@
                     alert("❌ Error: " + (data.error || "No se pudo actualizar"));
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Error en marcarEntregado:", err);
                 alert("Error al conectar con el servidor");
             }
         }
 
+        // Buscar nuevos pedidos disponibles
         async function buscarNuevosPedidos() {
             if (estaCargando) return;
             estaCargando = true;
@@ -168,7 +175,7 @@
             if (!seccionDisponibles || !pedidosDiv) return;
             
             seccionDisponibles.style.display = "block";
-            pedidosDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Buscando pedidos...</p></div>';
+            pedidosDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Buscando pedidos disponibles...</p></div>';
 
             try {
                 const res = await fetch(API + "/pedidos_repartidor.php", {
@@ -176,11 +183,11 @@
                 });
 
                 const data = await res.json();
-
-                if (!res.ok) throw new Error(data.error || "Error");
+                
+                console.log("Respuesta del servidor:", data);
 
                 if (!data.pedidos || data.pedidos.length === 0) {
-                    pedidosDiv.innerHTML = '<p class="sin-pedidos">No hay pedidos disponibles en tu ciudad</p>';
+                    pedidosDiv.innerHTML = '<p class="sin-pedidos">No hay pedidos disponibles en este momento.</p>';
                     estaCargando = false;
                     return;
                 }
@@ -193,11 +200,11 @@
                     card.innerHTML = `
                         <h3>🍽️ ${escapeHtml(pedido.restaurante)}</h3>
                         <p><strong>Cliente:</strong> ${escapeHtml(pedido.cliente)}</p>
-                        <p><strong>Dirección:</strong> ${escapeHtml(pedido.cliente_direccion)}</p>
+                        <p><strong>Dirección entrega:</strong> ${escapeHtml(pedido.cliente_direccion)}</p>
                         <p><strong>Total:</strong> ${pedido.total.toFixed(2)} €</p>
                         <div class="flex-buttons">
-                            <button class="btn-aceptar" onclick="aceptarPedido(${pedido.id})">✅ Aceptar</button>
-                            <button class="btn-rechazar" onclick="rechazarPedido(${pedido.id}, this)">❌ Rechazar</button>
+                            <button class="btn-aceptar" onclick="aceptarPedido(${pedido.id})">✅ Aceptar pedido</button>
+                            <button class="btn-rechazar" onclick="rechazarPedido(${pedido.id}, this)">❌ Rechazar pedido</button>
                         </div>
                     `;
                     pedidosDiv.appendChild(card);
@@ -205,7 +212,7 @@
                 estaCargando = false;
 
             } catch (err) {
-                console.error(err);
+                console.error("Error en buscarNuevosPedidos:", err);
                 pedidosDiv.innerHTML = `<p class="error-mensaje">Error: ${err.message}</p>`;
                 estaCargando = false;
             }
@@ -225,19 +232,29 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    alert("✅ Pedido aceptado");
-                    document.getElementById("seccion-disponibles").style.display = "none";
+                    alert("✅ Pedido aceptado correctamente");
+                    // Ocultar sección de disponibles
+                    const seccionDisponibles = document.getElementById("seccion-disponibles");
+                    if (seccionDisponibles) {
+                        seccionDisponibles.style.display = "none";
+                    }
+                    // Limpiar pedidos disponibles
+                    const pedidosDiv = document.getElementById("pedidos-disponibles");
+                    if (pedidosDiv) {
+                        pedidosDiv.innerHTML = "";
+                    }
+                    // Recargar pedidos en curso
                     cargarPedidosEnCurso();
                 } else {
-                    alert("❌ Error: " + data.error);
+                    alert("❌ Error: " + (data.error || "No se pudo aceptar el pedido"));
                 }
             } catch (err) {
-                console.error(err);
-                alert("Error al conectar");
+                console.error("Error en aceptarPedido:", err);
+                alert("Error al conectar con el servidor");
             }
         }
 
-        async function rechazarPedido(pedidoId, btn) {
+        async function rechazarPedido(pedidoId, boton) {
             try {
                 const res = await fetch(API + "/rechazar_pedido.php", {
                     method: "POST",
@@ -249,23 +266,31 @@
                 });
 
                 if (res.ok) {
-                    const card = btn.closest('.pedido-card');
-                    if (card) card.remove();
+                    // Eliminar el pedido de la lista visualmente
+                    const card = boton.closest('.pedido-card');
+                    if (card) {
+                        card.remove();
+                    }
                     
-                    const restantes = document.querySelectorAll('#pedidos-disponibles .pedido-card');
-                    if (restantes.length === 0) {
-                        document.getElementById("pedidos-disponibles").innerHTML = '<p class="sin-pedidos">No hay más pedidos disponibles</p>';
+                    // Verificar si quedan pedidos disponibles
+                    const pedidosRestantes = document.querySelectorAll('#pedidos-disponibles .pedido-card');
+                    if (pedidosRestantes.length === 0) {
+                        const pedidosDiv = document.getElementById("pedidos-disponibles");
+                        if (pedidosDiv) {
+                            pedidosDiv.innerHTML = '<p class="sin-pedidos">No hay más pedidos disponibles en este momento.</p>';
+                        }
                     }
                 } else {
                     const data = await res.json();
-                    alert("❌ Error: " + data.error);
+                    alert("❌ Error: " + (data.error || "No se pudo rechazar el pedido"));
                 }
             } catch (err) {
-                console.error(err);
-                alert("Error al conectar");
+                console.error("Error en rechazarPedido:", err);
+                alert("Error al conectar con el servidor");
             }
         }
 
+        // Inicializar: cargar pedidos en curso al cargar la página
         cargarPedidosEnCurso();
     </script>
 </body>

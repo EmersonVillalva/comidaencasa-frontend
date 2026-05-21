@@ -1,44 +1,212 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Gestión menú</title>
+    <title>Gestión de Menú - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
 
     <div class="topbar">
-        <h2>Menú restaurante</h2>
+        <h2>ComidaEnCasa - Restaurante</h2>
+        <div>
+            <span>🏪 Hola, <span id="nombreUsuario"></span></span>
+            <a href="restaurante_panel.html">📊 Dashboard</a>
+            <a href="restaurante_menu.html">🍽️ Mi menú</a>
+            <a href="restaurante_pedidos.html">📦 Pedidos</a>
+            <a href="restaurante_perfil.html">⚙️ Perfil</a>
+            <a href="#" onclick="logout()" style="color: #dc3545;">🚪 Cerrar sesión</a>
+        </div>
     </div>
 
     <div class="container">
-        <h2>Platos</h2>
-        <input id="buscar" placeholder="Buscar plato">
-        <button onclick="agregarPlato()">Añadir plato</button>
-        <div id="listaPlatos" class="grid"></div>
+        <div class="header-actions">
+            <h2>🍽️ Mi menú</h2>
+            <button class="btn-agregar" onclick="abrirModalAgregar()">➕ Agregar plato</button>
+        </div>
+        
+        <div id="menu-lista">
+            <div class="loading"><div class="spinner"></div><p>Cargando menú...</p></div>
+        </div>
     </div>
+
+    <!-- Modal para agregar/editar plato -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-titulo">Agregar plato</h3>
+            <input type="hidden" id="plato-id">
+            <input type="text" id="plato-nombre" placeholder="Nombre del plato">
+            <textarea id="plato-descripcion" rows="3" placeholder="Descripción (opcional)"></textarea>
+            <input type="number" id="plato-precio" step="0.01" placeholder="Precio €">
+            <div class="modal-buttons">
+                <button onclick="cerrarModal()" style="background: var(--gray-color);">Cancelar</button>
+                <button onclick="guardarPlato()" style="background: var(--success-color);">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>ComidaEnCasa - Tu comida favorita a domicilio</p>
+    </footer>
 
     <script>
         const API = "https://backend-production-78b0.up.railway.app/api";
+        let editandoId = null;
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+            window.location.href = "login.html";
+        }
+
+        const rol = localStorage.getItem("usuario_rol");
+        if (rol !== 'restaurante') {
+            window.location.href = "login.html";
+        }
+
+        document.getElementById("nombreUsuario").textContent = localStorage.getItem("usuario_nombre") || "Restaurante";
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("usuario_rol");
+            localStorage.removeItem("usuario_nombre");
+            localStorage.removeItem("usuario_email");
+            window.location.href = "login.html";
+        }
 
         async function cargarMenu() {
-            const res = await fetch(API + "/menu.php?id=1");
-            const platos = await res.json();
-            const div = document.getElementById("listaPlatos");
-            div.innerHTML = "";
-            platos.forEach(p => {
-                div.innerHTML += `
-                    <div class="card">
-                        <div class="card-content">
-                            <h3>${p.nombre}</h3>
-                            <p>${p.precio} €</p>
+            try {
+                const restauranteId = localStorage.getItem("usuario_restaurante_id") || 1;
+                const res = await fetch(API + "/menu.php?id=" + restauranteId, {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const platos = await res.json();
+                const contenedor = document.getElementById("menu-lista");
+                
+                if (platos.length === 0) {
+                    contenedor.innerHTML = '<p class="sin-pedidos">No tienes platos en tu menú. Haz clic en "Agregar plato" para empezar.</p>';
+                    return;
+                }
+                
+                contenedor.innerHTML = "";
+                
+                platos.forEach(plato => {
+                    const div = document.createElement("div");
+                    div.className = "plato-card";
+                    div.innerHTML = `
+                        <div class="plato-info">
+                            <h3>${escapeHtml(plato.nombre)}</h3>
+                            <p>${escapeHtml(plato.descripcion) || "Sin descripción"}</p>
                         </div>
-                    </div>
-                `;
+                        <div class="plato-precio">${plato.precio.toFixed(2)} €</div>
+                        <div class="plato-acciones">
+                            <button class="btn-editar" onclick='editarPlato(${JSON.stringify(plato)})'>✏️ Editar</button>
+                            <button class="btn-eliminar" onclick="eliminarPlato(${plato.id})">🗑️ Eliminar</button>
+                        </div>
+                    `;
+                    contenedor.appendChild(div);
+                });
+                
+            } catch (err) {
+                console.error(err);
+                document.getElementById("menu-lista").innerHTML = `<p class="error-mensaje">Error: ${err.message}</p>`;
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
             });
         }
 
-        function agregarPlato() {
-            alert("Funcionalidad para añadir plato");
+        function abrirModalAgregar() {
+            editandoId = null;
+            document.getElementById("modal-titulo").textContent = "Agregar plato";
+            document.getElementById("plato-id").value = "";
+            document.getElementById("plato-nombre").value = "";
+            document.getElementById("plato-descripcion").value = "";
+            document.getElementById("plato-precio").value = "";
+            document.getElementById("modal").style.display = "flex";
+        }
+
+        function editarPlato(plato) {
+            editandoId = plato.id;
+            document.getElementById("modal-titulo").textContent = "Editar plato";
+            document.getElementById("plato-id").value = plato.id;
+            document.getElementById("plato-nombre").value = plato.nombre;
+            document.getElementById("plato-descripcion").value = plato.descripcion || "";
+            document.getElementById("plato-precio").value = plato.precio;
+            document.getElementById("modal").style.display = "flex";
+        }
+
+        function cerrarModal() {
+            document.getElementById("modal").style.display = "none";
+        }
+
+        async function guardarPlato() {
+            const id = document.getElementById("plato-id").value;
+            const nombre = document.getElementById("plato-nombre").value;
+            const descripcion = document.getElementById("plato-descripcion").value;
+            const precio = parseFloat(document.getElementById("plato-precio").value);
+            
+            if (!nombre || isNaN(precio) || precio <= 0) {
+                alert("Nombre y precio válido son requeridos");
+                return;
+            }
+            
+            const url = id ? API + "/modificar_plato.php" : API + "/agregar_plato.php";
+            const body = id ? { id: parseInt(id), nombre, descripcion, precio } : { nombre, descripcion, precio };
+            
+            try {
+                const res = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify(body)
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    alert(id ? "✅ Plato actualizado" : "✅ Plato agregado");
+                    cerrarModal();
+                    cargarMenu();
+                } else {
+                    alert("❌ Error: " + data.error);
+                }
+            } catch (err) {
+                alert("Error al conectar con el servidor");
+            }
+        }
+
+        async function eliminarPlato(id) {
+            if (!confirm("¿Estás seguro de que quieres eliminar este plato?")) return;
+            
+            try {
+                const res = await fetch(API + "/eliminar_plato.php", {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({ id: id })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    alert("✅ Plato eliminado");
+                    cargarMenu();
+                } else {
+                    alert("❌ Error: " + data.error);
+                }
+            } catch (err) {
+                alert("Error al conectar con el servidor");
+            }
         }
 
         cargarMenu();

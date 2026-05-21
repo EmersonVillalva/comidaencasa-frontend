@@ -61,6 +61,20 @@
             window.location.href = "login.html";
         }
 
+        function getIconoTipoComida(tipo) {
+            const iconos = {
+                "Comida Rápida": "🍔",
+                "Italiana": "🍕",
+                "Española": "🥘",
+                "China": "🥡",
+                "Japonesa": "🍣",
+                "Mexicana": "🌮",
+                "Vegetariana": "🥗",
+                "Otros": "🍽️"
+            };
+            return iconos[tipo] || "🍽️";
+        }
+
         async function cargarRestaurantes() {
             try {
                 const res = await fetch(API + "/restaurantes.php?ciudad=" + encodeURIComponent(ciudad) + "&token=" + encodeURIComponent(token));
@@ -88,15 +102,7 @@
             lista.forEach(r => {
                 const card = document.createElement("div");
                 card.className = "card";
-                // Mostrar emoji según tipo de comida
-                let icono = "🍽️";
-                if (r.tipo_comida === "Comida Rápida") icono = "🍔";
-                else if (r.tipo_comida === "Italiana") icono = "🍕";
-                else if (r.tipo_comida === "Española") icono = "🥘";
-                else if (r.tipo_comida === "China") icono = "🥡";
-                else if (r.tipo_comida === "Japonesa") icono = "🍣";
-                else if (r.tipo_comida === "Mexicana") icono = "🌮";
-                else if (r.tipo_comida === "Vegetariana") icono = "🥗";
+                const icono = getIconoTipoComida(r.tipo_comida);
                 
                 card.innerHTML = `
                     <div class="card-content">

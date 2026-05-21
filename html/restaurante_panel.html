@@ -1,28 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Restaurante - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
 
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
     <div class="topbar">
         <h2>🏪 Panel Restaurante</h2>
         <div>
             <span id="nombreRestaurante" style="margin-right: 20px;"></span>
-            <a href="restaurante_panel.html">Dashboard</a>
-            <a href="restaurante_menu.html">Mi menú</a>
-            <a href="restaurante_pedidos.html">Pedidos</a>
-            <a href="restaurante_perfil.html">Perfil</a>
-            <a href="#" onclick="logout()">Cerrar sesión</a>
+            <a href="restaurante_panel.html" aria-current="page">Dashboard</a>
+            <a href="restaurante_menu.html">🍽️ Mi menú</a>
+            <a href="restaurante_pedidos.html">📦 Pedidos</a>
+            <a href="restaurante_perfil.html">⚙️ Perfil</a>
+            <a href="#" onclick="logout()" aria-label="Cerrar sesión">🚪 Cerrar sesión</a>
         </div>
     </div>
 
-    <div class="container">
+    <div class="container" id="main-content" tabindex="-1">
         <div class="stats" id="stats"></div>
         
         <h2>📋 Pedidos de mi restaurante</h2>
-        <div id="pedidos"></div>
+        <div id="pedidos" aria-live="polite"></div>
     </div>
 
     <script>
@@ -36,6 +40,16 @@
             localStorage.removeItem("usuario_ciudad");
             localStorage.removeItem("usuario_restaurante_id");
             window.location.href = "login.html";
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
 
         async function cargarPedidos() {
@@ -79,7 +93,8 @@
                 `;
 
                 let html = `
-                    <table>
+                    <table style="width:100%">
+                        <caption style="display: none;">Lista de pedidos del restaurante</caption>
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -94,23 +109,24 @@
                 `;
                 
                 for (const p of pedidos) {
+                    const estadoIcono = getEstadoIcono(p.estado);
                     html += `
                         <tr>
                             <td>${p.id}</td>
-                            <td>${p.cliente} (${p.cliente_email})</p></td>
+                            <td>${escapeHtml(p.cliente)}</p></td>
                             <td>${p.total} €</p></td>
-                            <td><span class="estado-${p.estado.replace(' ', '-')}">${p.estado}</span></td>
-                            <td>${new Date(p.fecha).toLocaleString()}</td>
+                            <td>${estadoIcono} <span class="estado-${p.estado.replace(' ', '-')}">${p.estado}</span></p></td>
+                            <td>${new Date(p.fecha).toLocaleString()}】p</p></td>
                             <td>
-                                <select class="select-estado" data-id="${p.id}" data-estado="${p.estado}">
-                                    <option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
-                                    <option value="preparando" ${p.estado === 'preparando' ? 'selected' : ''}>Preparando</option>
-                                    <option value="en camino" ${p.estado === 'en camino' ? 'selected' : ''}>En camino</option>
-                                    <option value="entregado" ${p.estado === 'entregado' ? 'selected' : ''}>Entregado</option>
-                                    <option value="cancelado" ${p.estado === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                                <select class="select-estado" data-id="${p.id}" data-estado="${p.estado}" aria-label="Cambiar estado del pedido #${p.id}">
+                                    <option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
+                                    <option value="preparando" ${p.estado === 'preparando' ? 'selected' : ''}>👨‍🍳 Preparando</option>
+                                    <option value="en camino" ${p.estado === 'en camino' ? 'selected' : ''}>🚚 En camino</option>
+                                    <option value="entregado" ${p.estado === 'entregado' ? 'selected' : ''}>✅ Entregado</option>
+                                    <option value="cancelado" ${p.estado === 'cancelado' ? 'selected' : ''}>❌ Cancelado</option>
                                 </select>
-                                <button class="btn-actualizar" onclick="actualizarEstado(${p.id}, this)">Actualizar</button>
-                            </td>
+                                <button class="btn-actualizar" onclick="actualizarEstado(${p.id}, this)" aria-label="Actualizar estado del pedido #${p.id}">Actualizar</button>
+                            </p></td>
                         </tr>
                     `;
                 }
@@ -120,8 +136,19 @@
                 
             } catch (err) {
                 console.log(err);
-                document.getElementById("pedidos").innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+                document.getElementById("pedidos").innerHTML = `<p style="color:red" role="alert">Error: ${err.message}</p>`;
             }
+        }
+        
+        function getEstadoIcono(estado) {
+            const iconos = {
+                'pendiente': '⏳',
+                'preparando': '👨‍🍳',
+                'en camino': '🚚',
+                'entregado': '✅',
+                'cancelado': '❌'
+            };
+            return iconos[estado] || '📋';
         }
         
         async function actualizarEstado(pedidoId, button) {

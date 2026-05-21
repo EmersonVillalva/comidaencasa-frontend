@@ -19,7 +19,7 @@
     </div>
 
     <div class="container">
-        <h2>Restaurantes</h2>
+        <h2>Restaurantes en tu ciudad</h2>
         <div class="grid" id="restaurantes"></div>
     </div>
 
@@ -35,6 +35,7 @@
             window.location.href = "login.html";
         }
 
+        const ciudad = localStorage.getItem("usuario_ciudad") || "General";
         document.getElementById("nombreUsuario").textContent = localStorage.getItem("usuario_nombre") || "Usuario";
 
         function logout() {
@@ -42,15 +43,21 @@
             localStorage.removeItem("usuario_rol");
             localStorage.removeItem("usuario_nombre");
             localStorage.removeItem("usuario_email");
+            localStorage.removeItem("usuario_ciudad");
             window.location.href = "login.html";
         }
 
         async function cargarRestaurantes() {
             try {
-                const res = await fetch(API + "/restaurantes.php");
+                const res = await fetch(API + "/restaurantes.php?ciudad=" + encodeURIComponent(ciudad) + "&token=" + encodeURIComponent(token));
                 const restaurantes = await res.json();
                 const grid = document.getElementById("restaurantes");
                 grid.innerHTML = "";
+
+                if (restaurantes.length === 0) {
+                    grid.innerHTML = "<p>No hay restaurantes disponibles en tu ciudad</p>";
+                    return;
+                }
 
                 restaurantes.forEach(r => {
                     const card = document.createElement("div");
@@ -60,6 +67,7 @@
                         <div class="card-content">
                             <h3>${r.nombre}</h3>
                             <p>${r.descripcion || ""}</p>
+                            ${r.ciudad ? `<p><small>📍 ${r.ciudad}</small></p>` : ''}
                             <button onclick="verMenu(${r.id})">Ver menú</button>
                         </div>
                     `;
@@ -67,6 +75,7 @@
                 });
             } catch (err) {
                 console.log(err);
+                document.getElementById("restaurantes").innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
             }
         }
 

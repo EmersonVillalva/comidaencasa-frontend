@@ -1,31 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menú - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
 
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
     <div class="topbar">
         <h2>ComidaEnCasa</h2>
         <div>
-            <span style="margin-right: 15px;">👤 Hola, <span id="nombreUsuario"></span></span>
+            <span aria-label="Usuario">👤 Hola, <span id="nombreUsuario"></span></span>
             <a href="cliente_inicio.html">🏠 Inicio</a>
             <a href="restaurantes.html">🍽️ Restaurantes</a>
             <a href="cliente_pedidos.html">📦 Mis pedidos</a>
             <a href="cliente_perfil.html">⚙️ Mi perfil</a>
-            <a href="#" onclick="logout()" style="color: #dc3545;">🚪 Cerrar sesión</a>
+            <a href="#" onclick="logout()" style="color: #dc3545;" aria-label="Cerrar sesión">🚪 Cerrar sesión</a>
         </div>
     </div>
 
-    <div class="contenedor-con-carrito">
+    <div class="contenedor-con-carrito" id="main-content" tabindex="-1">
         <div class="menu-section">
             <h2>Menú</h2>
             <div class="grid" id="menu"></div>
         </div>
         <div class="carrito-section">
             <h3>🛒 Mi pedido</h3>
-            <div id="carrito-contenido">
+            <div id="carrito-contenido" aria-live="polite" aria-label="Carrito de compras">
                 <div class="carrito-vacio">No hay productos en el carrito</div>
             </div>
         </div>
@@ -57,6 +61,16 @@
             window.location.href = "login.html";
         }
 
+        function escapeHtml(str) {
+            if (!str) return "";
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
         async function cargarMenu() {
             try {
                 const res = await fetch(API + "/menu.php?id=" + restauranteId);
@@ -74,17 +88,17 @@
                     div.className = "card";
                     div.innerHTML = `
                         <div class="card-content">
-                            <h3>🍽️ ${p.nombre}</h3>
-                            <p>${p.descripcion || "Delicioso plato"}</p>
+                            <h3>🍽️ ${escapeHtml(p.nombre)}</h3>
+                            <p>${escapeHtml(p.descripcion) || "Delicioso plato"}</p>
                             <p><strong>${parseFloat(p.precio).toFixed(2)} €</strong></p>
-                            <button class="btn-agregar" onclick="agregarAlCarrito(${p.id}, '${p.nombre}', ${p.precio})">Agregar al carrito</button>
+                            <button class="btn-agregar" onclick="agregarAlCarrito(${p.id}, '${escapeHtml(p.nombre)}', ${p.precio})" aria-label="Agregar ${escapeHtml(p.nombre)} al carrito">Agregar al carrito</button>
                         </div>
                     `;
                     menuDiv.appendChild(div);
                 });
             } catch (err) {
                 console.error(err);
-                document.getElementById("menu").innerHTML = `<p style="color:red">Error al cargar el menú: ${err.message}</p>`;
+                document.getElementById("menu").innerHTML = `<p style="color:red" role="alert">Error al cargar el menú: ${err.message}</p>`;
             }
         }
 
@@ -96,18 +110,41 @@
                 carrito.push({ id, nombre, precio: parseFloat(precio), cantidad: 1 });
             }
             actualizarCarrito();
+            anunciarCarrito(`Se agregó ${nombre} al carrito`);
         }
 
         function eliminarDelCarrito(id) {
             const index = carrito.findIndex(item => item.id === id);
             if (index !== -1) {
+                const nombre = carrito[index].nombre;
                 if (carrito[index].cantidad > 1) {
                     carrito[index].cantidad--;
+                    anunciarCarrito(`Se eliminó una unidad de ${nombre}`);
                 } else {
                     carrito.splice(index, 1);
+                    anunciarCarrito(`${nombre} eliminado del carrito`);
                 }
             }
             actualizarCarrito();
+        }
+
+        function anunciarCarrito(mensaje) {
+            const carritoDiv = document.getElementById("carrito-contenido");
+            const anuncio = document.createElement("div");
+            anuncio.setAttribute("role", "status");
+            anuncio.setAttribute("aria-live", "polite");
+            anuncio.className = "mensaje-exito";
+            anuncio.style.position = "absolute";
+            anuncio.style.width = "1px";
+            anuncio.style.height = "1px";
+            anuncio.style.padding = "0";
+            anuncio.style.margin = "-1px";
+            anuncio.style.overflow = "hidden";
+            anuncio.style.clip = "rect(0,0,0,0)";
+            anuncio.style.border = "0";
+            anuncio.textContent = mensaje;
+            document.body.appendChild(anuncio);
+            setTimeout(() => anuncio.remove(), 3000);
         }
 
         function actualizarCarrito() {
@@ -127,13 +164,13 @@
                 html += `
                     <div class="carrito-item">
                         <div class="carrito-item-info">
-                            <h4>${item.nombre}</h4>
+                            <h4>${escapeHtml(item.nombre)}</h4>
                             <p>${item.precio.toFixed(2)} €</p>
                         </div>
                         <div class="carrito-item-cantidad">
-                            <button onclick="eliminarDelCarrito(${item.id})">-</button>
+                            <button onclick="eliminarDelCarrito(${item.id})" aria-label="Disminuir cantidad de ${escapeHtml(item.nombre)}">-</button>
                             <span>${item.cantidad}</span>
-                            <button onclick="agregarAlCarrito(${item.id}, '${item.nombre}', ${item.precio})">+</button>
+                            <button onclick="agregarAlCarrito(${item.id}, '${escapeHtml(item.nombre)}', ${item.precio})" aria-label="Aumentar cantidad de ${escapeHtml(item.nombre)}">+</button>
                         </div>
                         <div class="carrito-item-precio">${subtotal.toFixed(2)} €</div>
                     </div>
@@ -141,7 +178,7 @@
             });
             
             html += `<div class="carrito-total">Total: ${total.toFixed(2)} €</div>`;
-            html += `<button class="btn-confirmar" onclick="confirmarPedido()">Confirmar pedido</button>`;
+            html += `<button class="btn-confirmar" onclick="confirmarPedido()" aria-label="Confirmar pedido por ${total.toFixed(2)} euros">Confirmar pedido</button>`;
             
             carritoDiv.innerHTML = html;
         }

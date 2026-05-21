@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inicio - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
 
+    <!-- Skip to content link -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
     <div class="topbar">
         <h2>ComidaEnCasa</h2>
         <div>
-            <span style="margin-right: 15px;">👤 Hola, <span id="nombreUsuario"></span></span>
-            <a href="cliente_inicio.html">🏠 Inicio</a>
+            <span aria-label="Usuario">👤 Hola, <span id="nombreUsuario"></span></span>
+            <a href="cliente_inicio.html" aria-current="page">🏠 Inicio</a>
             <a href="restaurantes.html">🍽️ Restaurantes</a>
             <a href="cliente_pedidos.html">📦 Mis pedidos</a>
             <a href="cliente_perfil.html">⚙️ Mi perfil</a>
-            <a href="#" onclick="logout()" style="color: #dc3545;">🚪 Cerrar sesión</a>
+            <a href="#" onclick="logout()" style="color: #dc3545;" aria-label="Cerrar sesión">🚪 Cerrar sesión</a>
         </div>
     </div>
 
@@ -22,14 +27,15 @@
         <h1>Bienvenido, <span id="heroNombre"></span></h1>
         <p>¿Qué te apetece comer hoy en <span id="ciudadUsuario"></span>?</p>
         <div class="search-box">
-            <input id="buscador" placeholder="Buscar restaurante..." onkeyup="buscarRestaurante()">
+            <label for="buscador" style="display: none;">Buscar restaurante</label>
+            <input id="buscador" type="text" placeholder="Buscar restaurante..." aria-label="Buscar restaurantes" onkeyup="buscarRestaurante()">
         </div>
     </div>
 
-    <div class="container">
+    <div class="container" id="main-content" tabindex="-1">
         <h2>Restaurantes en tu ciudad</h2>
-        <div class="grid" id="restaurantes"></div>
-        <p id="error"></p>
+        <div class="grid" id="restaurantes" aria-live="polite"></div>
+        <div id="error" role="alert"></div>
     </div>
 
     <footer>
@@ -76,6 +82,9 @@
         }
 
         async function cargarRestaurantes() {
+            const errorDiv = document.getElementById("error");
+            errorDiv.innerHTML = "";
+            
             try {
                 const res = await fetch(API + "/restaurantes.php?ciudad=" + encodeURIComponent(ciudad) + "&token=" + encodeURIComponent(token));
                 if (!res.ok) throw new Error("Error cargando restaurantes");
@@ -83,10 +92,12 @@
                 mostrarRestaurantes(restaurantes);
                 
                 if (restaurantes.length === 0) {
-                    document.getElementById("error").textContent = "No hay restaurantes disponibles en tu ciudad.";
+                    errorDiv.innerHTML = "No hay restaurantes disponibles en tu ciudad.";
+                    errorDiv.setAttribute("role", "alert");
                 }
             } catch (err) {
-                document.getElementById("error").textContent = err.message;
+                errorDiv.innerHTML = err.message;
+                errorDiv.setAttribute("role", "alert");
             }
         }
 
@@ -106,14 +117,24 @@
                 
                 card.innerHTML = `
                     <div class="card-content">
-                        <h3>${icono} ${r.nombre}</h3>
-                        <p>${r.descripcion || "Restaurante con excelente comida"}</p>
-                        ${r.ciudad ? `<p><small>📍 ${r.ciudad}</small></p>` : ''}
-                        ${r.tipo_comida && r.tipo_comida !== 'Otros' ? `<p><small>🍽️ ${r.tipo_comida}</small></p>` : ''}
-                        <button onclick="verMenu(${r.id})">Ver menú</button>
+                        <h3>${icono} ${escapeHtml(r.nombre)}</h3>
+                        <p>${escapeHtml(r.descripcion) || "Restaurante con excelente comida"}</p>
+                        ${r.ciudad ? `<p><small>📍 ${escapeHtml(r.ciudad)}</small></p>` : ''}
+                        ${r.tipo_comida && r.tipo_comida !== 'Otros' ? `<p><small>🍽️ ${escapeHtml(r.tipo_comida)}</small></p>` : ''}
+                        <button onclick="verMenu(${r.id})" aria-label="Ver menú de ${escapeHtml(r.nombre)}">Ver menú</button>
                     </div>
                 `;
                 cont.appendChild(card);
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
             });
         }
 

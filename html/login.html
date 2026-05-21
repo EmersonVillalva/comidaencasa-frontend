@@ -58,6 +58,10 @@
                 localStorage.setItem("usuario_rol", data.usuario.rol);
                 localStorage.setItem("usuario_ciudad", data.usuario.ciudad || "General");
                 
+                if (data.usuario.restaurante_id) {
+                    localStorage.setItem("usuario_restaurante_id", data.usuario.restaurante_id);
+                }
+                
                 // Redirigir según el rol
                 if (data.usuario.rol === 'restaurante') {
                     window.location.href = "restaurante_panel.html";

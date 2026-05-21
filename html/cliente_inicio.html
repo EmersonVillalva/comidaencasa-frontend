@@ -63,7 +63,6 @@
 
         async function cargarRestaurantes() {
             try {
-                // Enviar la ciudad del usuario en la petición
                 const res = await fetch(API + "/restaurantes.php?ciudad=" + encodeURIComponent(ciudad) + "&token=" + encodeURIComponent(token));
                 if (!res.ok) throw new Error("Error cargando restaurantes");
                 restaurantes = await res.json();
@@ -89,12 +88,22 @@
             lista.forEach(r => {
                 const card = document.createElement("div");
                 card.className = "card";
+                // Mostrar emoji según tipo de comida
+                let icono = "🍽️";
+                if (r.tipo_comida === "Comida Rápida") icono = "🍔";
+                else if (r.tipo_comida === "Italiana") icono = "🍕";
+                else if (r.tipo_comida === "Española") icono = "🥘";
+                else if (r.tipo_comida === "China") icono = "🥡";
+                else if (r.tipo_comida === "Japonesa") icono = "🍣";
+                else if (r.tipo_comida === "Mexicana") icono = "🌮";
+                else if (r.tipo_comida === "Vegetariana") icono = "🥗";
+                
                 card.innerHTML = `
-                    <img src="https://picsum.photos/300/200?random=${r.id}">
                     <div class="card-content">
-                        <h3>${r.nombre}</h3>
+                        <h3>${icono} ${r.nombre}</h3>
                         <p>${r.descripcion || "Restaurante con excelente comida"}</p>
                         ${r.ciudad ? `<p><small>📍 ${r.ciudad}</small></p>` : ''}
+                        ${r.tipo_comida && r.tipo_comida !== 'Otros' ? `<p><small>🍽️ ${r.tipo_comida}</small></p>` : ''}
                         <button onclick="verMenu(${r.id})">Ver menú</button>
                     </div>
                 `;

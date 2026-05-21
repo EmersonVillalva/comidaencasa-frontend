@@ -17,8 +17,8 @@
 
     <div class="form-card">
         <h2>Iniciar sesión</h2>
-        <input id="email" placeholder="Email">
-        <input id="password" type="password" placeholder="Contraseña">
+        <input id="email" type="email" placeholder="Email" autocomplete="email">
+        <input id="password" type="password" placeholder="Contraseña" autocomplete="current-password">
         <button onclick="login()">Entrar</button>
         <p id="error"></p>
         
@@ -52,11 +52,13 @@
 
                 // Guardar datos en localStorage
                 localStorage.setItem("token", data.token);
-                localStorage.setItem("usuario_rol", data.usuario.rol);
+                localStorage.setItem("usuario_id", data.usuario.id);
                 localStorage.setItem("usuario_nombre", data.usuario.nombre);
                 localStorage.setItem("usuario_email", data.usuario.email);
+                localStorage.setItem("usuario_rol", data.usuario.rol);
+                localStorage.setItem("usuario_ciudad", data.usuario.ciudad || "General");
                 
-                // Redirigir según el rol (usando los nombres de archivo existentes)
+                // Redirigir según el rol
                 if (data.usuario.rol === 'restaurante') {
                     window.location.href = "restaurante_panel.html";
                 } else if (data.usuario.rol === 'repartidor') {
@@ -69,6 +71,13 @@
                 document.getElementById("error").textContent = err.message;
             }
         }
+
+        // Permitir enviar con Enter
+        document.getElementById("password").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                login();
+            }
+        });
     </script>
 </body>
 </html>

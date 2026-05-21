@@ -47,6 +47,20 @@
             window.location.href = "login.html";
         }
 
+        function getIconoTipoComida(tipo) {
+            const iconos = {
+                "Comida Rápida": "🍔",
+                "Italiana": "🍕",
+                "Española": "🥘",
+                "China": "🥡",
+                "Japonesa": "🍣",
+                "Mexicana": "🌮",
+                "Vegetariana": "🥗",
+                "Otros": "🍽️"
+            };
+            return iconos[tipo] || "🍽️";
+        }
+
         async function cargarRestaurantes() {
             try {
                 const res = await fetch(API + "/restaurantes.php?ciudad=" + encodeURIComponent(ciudad) + "&token=" + encodeURIComponent(token));
@@ -62,12 +76,14 @@
                 restaurantes.forEach(r => {
                     const card = document.createElement("div");
                     card.className = "card";
+                    const icono = getIconoTipoComida(r.tipo_comida);
+                    
                     card.innerHTML = `
-                        <img src="https://picsum.photos/300/200?random=${r.id}">
                         <div class="card-content">
-                            <h3>${r.nombre}</h3>
-                            <p>${r.descripcion || ""}</p>
+                            <h3>${icono} ${r.nombre}</h3>
+                            <p>${r.descripcion || "Restaurante con excelente comida"}</p>
                             ${r.ciudad ? `<p><small>📍 ${r.ciudad}</small></p>` : ''}
+                            ${r.tipo_comida && r.tipo_comida !== 'Otros' ? `<p><small>🍽️ ${r.tipo_comida}</small></p>` : ''}
                             <button onclick="verMenu(${r.id})">Ver menú</button>
                         </div>
                     `;

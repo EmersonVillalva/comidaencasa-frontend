@@ -3,10 +3,11 @@
 /* ============================================ */
 
 :root {
-    --primary-color: #ff6b6b;
-    --primary-dark: #ff5252;
+    --primary-color: #ff4757;
+    --primary-dark: #e84118;
     --secondary-color: #ff9f43;
-    --success-color: #28a745;
+    --success-color: #2ed573;
+    --success-dark: #28a745;
     --danger-color: #dc3545;
     --warning-color: #ffc107;
     --info-color: #17a2b8;
@@ -78,6 +79,11 @@ body {
 }
 
 .topbar a:hover {
+    color: var(--primary-color);
+    background: #fff0f0;
+}
+
+.topbar a[aria-current="page"] {
     color: var(--primary-color);
     background: #fff0f0;
 }
@@ -245,6 +251,12 @@ button:hover {
     box-shadow: var(--shadow-sm);
 }
 
+button:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(255,71,87,0.2);
+}
+
 .btn-agregar {
     background: var(--primary-color);
     width: 100%;
@@ -258,7 +270,7 @@ button:hover {
 .btn-confirmar {
     width: 100%;
     margin-top: 15px;
-    background: var(--success-color);
+    background: var(--success-dark);
     padding: 12px;
     font-size: 16px;
 }
@@ -333,14 +345,26 @@ input, select, textarea {
 }
 
 input:focus, select:focus, textarea:focus {
-    outline: none;
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(255,107,107,0.1);
+    box-shadow: 0 0 0 3px rgba(255,71,87,0.1);
 }
 
 textarea {
     resize: vertical;
     min-height: 80px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.grupo-form {
+    margin-bottom: 20px;
 }
 
 /* ============================================ */
@@ -391,6 +415,11 @@ textarea {
     accent-color: var(--primary-color);
 }
 
+.rol-label input[type="radio"]:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
 /* ============================================ */
 /* TIPO COMIDA - BOTONES VISUALES */
 /* ============================================ */
@@ -421,6 +450,11 @@ textarea {
     border-color: var(--primary-color);
     background: #fff0f0;
     transform: translateY(-4px);
+}
+
+.tipo-btn:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 .tipo-btn.seleccionado {
@@ -461,6 +495,7 @@ th {
     padding: 16px;
     font-weight: 600;
     font-size: 14px;
+    text-align: left;
 }
 
 td {
@@ -508,6 +543,11 @@ tr:hover td {
     border: 1px solid var(--border-color);
     background: white;
     cursor: pointer;
+}
+
+.select-estado:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 /* ============================================ */
@@ -699,11 +739,11 @@ tr:hover td {
     margin: 20px auto;
     max-width: 500px;
     box-shadow: var(--shadow-md);
-    border-left: 4px solid var(--success-color);
+    border-left: 4px solid var(--success-dark);
 }
 
 .pedido-aceptado-card h3 {
-    color: var(--success-color);
+    color: var(--success-dark);
     margin-bottom: 15px;
 }
 
@@ -718,7 +758,7 @@ tr:hover td {
 }
 
 .confirmacion-card h3 {
-    color: var(--success-color);
+    color: var(--success-dark);
     margin-bottom: 15px;
 }
 
@@ -727,7 +767,7 @@ tr:hover td {
 }
 
 .btn-aceptar {
-    background: var(--success-color);
+    background: var(--success-dark);
     flex: 1;
 }
 
@@ -762,7 +802,7 @@ tr:hover td {
 }
 
 .btn-entregar {
-    background: var(--success-color);
+    background: var(--success-dark);
 }
 
 .btn-entregar:hover {
@@ -914,7 +954,83 @@ tr:hover td {
 
 #seccion-en-curso h2 {
     margin-bottom: 20px;
-    color: var(--success-color);
+    color: var(--success-dark);
+}
+
+/* ============================================ */
+/* MEJORAS DE ACCESIBILIDAD */
+/* ============================================ */
+
+/* Skip to content link - oculto hasta recibir foco */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--primary-color);
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 0 0 8px 0;
+    z-index: 1001;
+    font-weight: 600;
+}
+
+.skip-link:focus {
+    top: 0;
+    outline: 2px solid white;
+    outline-offset: 0;
+}
+
+/* Foco visible en elementos interactivos (global) */
+a:focus, button:focus, input:focus, select:focus, textarea:focus, .tipo-btn:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(255,71,87,0.2);
+}
+
+/* Indicador visual para elementos interactivos no-botón */
+a[href]:hover, button:hover, .card:hover {
+    cursor: pointer;
+}
+
+/* Aria-live para contenido dinámico */
+[aria-live="polite"] {
+    position: relative;
+}
+
+/* Mensajes de error accesibles */
+.error-mensaje, [role="alert"] {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-size: 14px;
+    border-left: 4px solid var(--danger-color);
+}
+
+/* Contenido principal con tabindex para skip-link */
+#main-content {
+    outline: none;
+}
+
+/* Responsive para accesibilidad */
+@media (max-width: 768px) {
+    button, .btn-agregar, .btn-confirmar {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    a, .card, .tipo-btn {
+        min-height: 44px;
+    }
+}
+
+/* Alto contraste para estados de pedido (adicional a iconos) */
+@media (forced-colors: active) {
+    .estado-pendiente, .estado-preparando, .estado-en\ camino, .estado-entregado, .estado-cancelado {
+        border: 1px solid currentColor;
+    }
 }
 
 /* ============================================ */
@@ -1055,6 +1171,11 @@ footer {
     table {
         display: block;
         overflow-x: auto;
+    }
+    
+    button, .btn-agregar, .btn-confirmar {
+        min-height: 44px;
+        min-width: 44px;
     }
 }
 

@@ -1,24 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Panel Repartidor - ComidaEnCasa</title>
+    <title>Gestión de Menú - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
 
     <div class="topbar">
-        <h2>ComidaEnCasa - Repartidor</h2>
+        <h2>ComidaEnCasa - Restaurante</h2>
         <div>
-            <span>🛵 Hola, <span id="nombreUsuario"></span></span>
-            <a href="repartidor_inicio.html">📦 Pedidos</a>
-            <a href="repartidor_perfil.html">⚙️ Perfil</a>
+            <span>🏪 Hola, <span id="nombreUsuario"></span></span>
+            <a href="restaurante_panel.html">📊 Dashboard</a>
+            <a href="restaurante_menu.html">🍽️ Mi menú</a>
+            <a href="restaurante_pedidos.html">📦 Pedidos</a>
+            <a href="restaurante_perfil.html">⚙️ Perfil</a>
             <a href="#" onclick="logout()" style="color: #dc3545;">🚪 Cerrar sesión</a>
         </div>
     </div>
 
-    <div class="container" id="contenedor-pedido">
-        <div id="cargando" style="text-align: center; padding: 40px;">
-            <p>Buscando pedidos disponibles...</p>
+    <div class="container">
+        <div class="header-actions">
+            <h2>🍽️ Mi menú</h2>
+            <button class="btn-agregar" onclick="abrirModalAgregar()">➕ Agregar plato</button>
+        </div>
+        
+        <div id="menu-lista">
+            <div class="loading"><div class="spinner"></div><p>Cargando menú...</p></div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar plato -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-titulo">Agregar plato</h3>
+            <input type="hidden" id="plato-id">
+            <input type="text" id="plato-nombre" placeholder="Nombre del plato">
+            <textarea id="plato-descripcion" rows="3" placeholder="Descripción (opcional)"></textarea>
+            <input type="number" id="plato-precio" step="0.01" placeholder="Precio €">
+            <div class="modal-buttons">
+                <button onclick="cerrarModal()" style="background: var(--gray-color);">Cancelar</button>
+                <button onclick="guardarPlato()" style="background: var(--success-color);">Guardar</button>
+            </div>
         </div>
     </div>
 
@@ -28,6 +50,7 @@
 
     <script>
         const API = "https://backend-production-78b0.up.railway.app/api";
+        let editandoId = null;
 
         const token = localStorage.getItem("token");
         if (!token) {
@@ -35,11 +58,11 @@
         }
 
         const rol = localStorage.getItem("usuario_rol");
-        if (rol !== 'repartidor') {
+        if (rol !== 'restaurante') {
             window.location.href = "login.html";
         }
 
-        document.getElementById("nombreUsuario").textContent = localStorage.getItem("usuario_nombre") || "Repartidor";
+        document.getElementById("nombreUsuario").textContent = localStorage.getItem("usuario_nombre") || "Restaurante";
 
         function logout() {
             localStorage.removeItem("token");
@@ -49,133 +72,145 @@
             window.location.href = "login.html";
         }
 
-        let pedidoActual = null;
-        let estaCargando = false;
-
-        async function cargarSiguientePedido() {
-            if (estaCargando) return;
-            estaCargando = true;
-
+        async function cargarMenu() {
             try {
-                const res = await fetch(API + "/pedidos_repartidor.php", {
+                const restauranteId = localStorage.getItem("usuario_restaurante_id") || 1;
+                const res = await fetch(API + "/menu.php?id=" + restauranteId, {
                     headers: { "Authorization": "Bearer " + token }
                 });
-
-                const data = await res.json();
-                console.log("Respuesta del servidor:", data);
-
-                if (data.pedido) {
-                    pedidoActual = data.pedido;
-                    mostrarPedido(pedidoActual);
-                } else {
-                    mostrarMensaje(data.mensaje || "No hay pedidos disponibles en tu ciudad");
+                const platos = await res.json();
+                const contenedor = document.getElementById("menu-lista");
+                
+                if (platos.length === 0) {
+                    contenedor.innerHTML = '<p class="sin-pedidos">No tienes platos en tu menú. Haz clic en "Agregar plato" para empezar.</p>';
+                    return;
                 }
-                estaCargando = false;
-
+                
+                contenedor.innerHTML = "";
+                
+                platos.forEach(plato => {
+                    const div = document.createElement("div");
+                    div.className = "plato-card";
+                    div.innerHTML = `
+                        <div class="plato-info">
+                            <h3>${escapeHtml(plato.nombre)}</h3>
+                            <p>${escapeHtml(plato.descripcion) || "Sin descripción"}</p>
+                        </div>
+                        <div class="plato-precio">${plato.precio.toFixed(2)} €</div>
+                        <div class="plato-acciones">
+                            <button class="btn-editar" onclick='editarPlato(${JSON.stringify(plato)})'>✏️ Editar</button>
+                            <button class="btn-eliminar" onclick="eliminarPlato(${plato.id})">🗑️ Eliminar</button>
+                        </div>
+                    `;
+                    contenedor.appendChild(div);
+                });
+                
             } catch (err) {
-                console.error("Error:", err);
-                mostrarMensaje("Error al cargar pedido: " + err.message);
-                estaCargando = false;
+                console.error(err);
+                document.getElementById("menu-lista").innerHTML = `<p class="error-mensaje">Error: ${err.message}</p>`;
             }
         }
 
-        function mostrarPedido(pedido) {
-            const contenedor = document.getElementById("contenedor-pedido");
-            contenedor.innerHTML = `
-                <div class="pedido-card" style="max-width: 500px; margin: 0 auto;">
-                    <h3>🍽️ Nuevo pedido disponible</h3>
-                    <p><strong>Restaurante:</strong> ${pedido.restaurante}</p>
-                    <p><strong>Cliente:</strong> ${pedido.cliente}</p>
-                    <p><strong>Dirección entrega:</strong> ${pedido.cliente_direccion || "No especificada"}</p>
-                    <p><strong>Total del pedido:</strong> ${pedido.total ? pedido.total.toFixed(2) : "0"} €</p>
-                    <p><strong>Ciudad:</strong> ${pedido.ciudad || "General"}</p>
-                    
-                    <div style="display: flex; gap: 15px; margin-top: 20px;">
-                        <button onclick="aceptarPedido()" style="background: #28a745; flex: 1;">✅ Aceptar pedido</button>
-                        <button onclick="rechazarPedido()" style="background: #dc3545; flex: 1;">❌ Rechazar pedido</button>
-                    </div>
-                </div>
-            `;
+        function escapeHtml(str) {
+            if (!str) return "";
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
 
-        function mostrarMensaje(mensaje) {
-            const contenedor = document.getElementById("contenedor-pedido");
-            contenedor.innerHTML = `
-                <div style="text-align: center; padding: 40px;">
-                    <p>📭 ${mensaje}</p>
-                    <button onclick="cargarSiguientePedido()" style="margin-top: 20px;">🔄 Buscar pedidos</button>
-                </div>
-            `;
+        function abrirModalAgregar() {
+            editandoId = null;
+            document.getElementById("modal-titulo").textContent = "Agregar plato";
+            document.getElementById("plato-id").value = "";
+            document.getElementById("plato-nombre").value = "";
+            document.getElementById("plato-descripcion").value = "";
+            document.getElementById("plato-precio").value = "";
+            document.getElementById("modal").style.display = "flex";
         }
 
-        async function aceptarPedido() {
-            if (!pedidoActual) return;
+        function editarPlato(plato) {
+            editandoId = plato.id;
+            document.getElementById("modal-titulo").textContent = "Editar plato";
+            document.getElementById("plato-id").value = plato.id;
+            document.getElementById("plato-nombre").value = plato.nombre;
+            document.getElementById("plato-descripcion").value = plato.descripcion || "";
+            document.getElementById("plato-precio").value = plato.precio;
+            document.getElementById("modal").style.display = "flex";
+        }
 
+        function cerrarModal() {
+            document.getElementById("modal").style.display = "none";
+        }
+
+        async function guardarPlato() {
+            const id = document.getElementById("plato-id").value;
+            const nombre = document.getElementById("plato-nombre").value;
+            const descripcion = document.getElementById("plato-descripcion").value;
+            const precio = parseFloat(document.getElementById("plato-precio").value);
+            
+            if (!nombre || isNaN(precio) || precio <= 0) {
+                alert("Nombre y precio válido son requeridos");
+                return;
+            }
+            
+            const url = id ? API + "/modificar_plato.php" : API + "/agregar_plato.php";
+            const body = id ? { id: parseInt(id), nombre, descripcion, precio } : { nombre, descripcion, precio };
+            
             try {
-                const res = await fetch(API + "/aceptar_pedido.php", {
+                const res = await fetch(url, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "Authorization": "Bearer " + token
                     },
-                    body: JSON.stringify({ pedido_id: pedidoActual.id })
+                    body: JSON.stringify(body)
                 });
-
+                
                 const data = await res.json();
-
+                
                 if (res.ok) {
-                    const contenedor = document.getElementById("contenedor-pedido");
-                    contenedor.innerHTML = `
-                        <div style="text-align: center; padding: 40px;">
-                            <p>✅ ${data.mensaje}</p>
-                            <p>Pedido #${data.pedido_id} aceptado</p>
-                            <p>Dirígete al restaurante a recoger el pedido.</p>
-                            <button onclick="cargarSiguientePedido()" style="margin-top: 20px;">🔄 Buscar siguiente pedido</button>
-                        </div>
-                    `;
-                    pedidoActual = null;
+                    alert(id ? "✅ Plato actualizado" : "✅ Plato agregado");
+                    cerrarModal();
+                    cargarMenu();
                 } else {
-                    alert("Error: " + data.error);
-                    cargarSiguientePedido();
+                    alert("❌ Error: " + data.error);
                 }
             } catch (err) {
                 alert("Error al conectar con el servidor");
-                cargarSiguientePedido();
             }
         }
 
-        async function rechazarPedido() {
-            if (!pedidoActual) return;
-
+        async function eliminarPlato(id) {
+            if (!confirm("¿Estás seguro de que quieres eliminar este plato?")) return;
+            
             try {
-                const res = await fetch(API + "/rechazar_pedido.php", {
-                    method: "POST",
+                const res = await fetch(API + "/eliminar_plato.php", {
+                    method: "DELETE",
                     headers: {
                         "Content-Type": "application/json",
                         "Authorization": "Bearer " + token
                     },
-                    body: JSON.stringify({ pedido_id: pedidoActual.id })
+                    body: JSON.stringify({ id: id })
                 });
-
+                
+                const data = await res.json();
+                
                 if (res.ok) {
-                    mostrarMensaje("Pedido rechazado, buscando siguiente...");
-                    pedidoActual = null;
-                    setTimeout(() => {
-                        cargarSiguientePedido();
-                    }, 1000);
+                    alert("✅ Plato eliminado");
+                    cargarMenu();
                 } else {
-                    const data = await res.json();
-                    alert("Error: " + data.error);
-                    cargarSiguientePedido();
+                    alert("❌ Error: " + data.error);
                 }
             } catch (err) {
-                alert("Error al rechazar pedido");
-                cargarSiguientePedido();
+                alert("Error al conectar con el servidor");
             }
         }
 
-        // Cargar el primer pedido al iniciar
-        cargarSiguientePedido();
+        cargarMenu();
     </script>
 </body>
 </html>
+

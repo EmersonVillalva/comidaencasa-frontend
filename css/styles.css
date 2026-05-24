@@ -1,6 +1,4 @@
-/* ============================================ */
 /* RESET Y VARIABLES GLOBALES */
-/* ============================================ */
 
 :root {
     --primary-color: #ff4757;
@@ -37,9 +35,7 @@ body {
     line-height: 1.5;
 }
 
-/* ============================================ */
 /* NAVBAR PROFESIONAL */
-/* ============================================ */
 
 .topbar {
     display: flex;
@@ -88,9 +84,7 @@ body {
     background: #fff0f0;
 }
 
-/* ============================================ */
 /* HERO SECTION */
-/* ============================================ */
 
 .hero {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -125,9 +119,7 @@ body {
     opacity: 0.95;
 }
 
-/* ============================================ */
 /* SEARCH BOX */
-/* ============================================ */
 
 .search-box {
     margin-top: 32px;
@@ -149,9 +141,7 @@ body {
     transform: translateY(-2px);
 }
 
-/* ============================================ */
 /* CONTAINER */
-/* ============================================ */
 
 .container {
     max-width: 1200px;
@@ -159,9 +149,7 @@ body {
     padding: 48px 24px;
 }
 
-/* ============================================ */
 /* SECTION TITLES */
-/* ============================================ */
 
 .container h2 {
     font-size: 28px;
@@ -182,9 +170,7 @@ body {
     border-radius: 2px;
 }
 
-/* ============================================ */
 /* GRID SYSTEM */
-/* ============================================ */
 
 .grid {
     display: grid;
@@ -193,9 +179,7 @@ body {
     margin-top: 24px;
 }
 
-/* ============================================ */
 /* CARDS PROFESIONALES */
-/* ============================================ */
 
 .card {
     background: white;
@@ -229,9 +213,7 @@ body {
     line-height: 1.4;
 }
 
-/* ============================================ */
 /* BUTTONS */
-/* ============================================ */
 
 button {
     padding: 12px 20px;
@@ -310,9 +292,7 @@ button:focus {
     background: #c82333;
 }
 
-/* ============================================ */
 /* FORMULARIOS PROFESIONALES */
-/* ============================================ */
 
 .form-card {
     max-width: 500px;
@@ -367,9 +347,7 @@ label {
     margin-bottom: 20px;
 }
 
-/* ============================================ */
 /* RADIO BUTTONS DE ROL */
-/* ============================================ */
 
 .grupo-rol {
     margin-bottom: 24px;
@@ -420,9 +398,7 @@ label {
     outline-offset: 2px;
 }
 
-/* ============================================ */
 /* TIPO COMIDA - BOTONES VISUALES */
-/* ============================================ */
 
 .tipo-comida-grid {
     display: grid;
@@ -476,9 +452,7 @@ label {
     font-weight: 600;
 }
 
-/* ============================================ */
 /* TABLAS PROFESIONALES */
-/* ============================================ */
 
 table {
     width: 100%;
@@ -511,9 +485,7 @@ tr:hover td {
     background: #fafafa;
 }
 
-/* ============================================ */
 /* ESTADOS DE PEDIDOS */
-/* ============================================ */
 
 .estado-pendiente, 
 .estado-preparando, 
@@ -533,9 +505,7 @@ tr:hover td {
 .estado-entregado { background: #d4edda; color: #155724; }
 .estado-cancelado { background: #f8d7da; color: #721c24; }
 
-/* ============================================ */
 /* SELECT ESTADO */
-/* ============================================ */
 
 .select-estado {
     padding: 5px;
@@ -550,9 +520,7 @@ tr:hover td {
     outline-offset: 2px;
 }
 
-/* ============================================ */
 /* STATS PANEL RESTAURANTE */
-/* ============================================ */
 
 .stats {
     display: flex;
@@ -589,9 +557,7 @@ tr:hover td {
     margin-bottom: 0;
 }
 
-/* ============================================ */
 /* CARRITO DE COMPRAS */
-/* ============================================ */
 
 .contenedor-con-carrito {
     display: flex;
@@ -688,9 +654,7 @@ tr:hover td {
     color: var(--primary-color);
 }
 
-/* ============================================ */
 /* FILTRO CIUDAD */
-/* ============================================ */
 
 .filtro-ciudad {
     background: white;
@@ -719,9 +683,7 @@ tr:hover td {
     background: var(--primary-color);
 }
 
-/* ============================================ */
 /* REPARTIDOR - PEDIDO CARD */
-/* ============================================ */
 
 .pedido-card {
     background: white;
@@ -835,9 +797,7 @@ tr:hover td {
     margin-top: 20px;
 }
 
-/* ============================================ */
 /* GESTIÓN DE MENÚ - RESTAURANTE */
-/* ============================================ */
 
 .header-actions {
     display: flex;
@@ -904,9 +864,7 @@ tr:hover td {
     margin: 20px 0;
 }
 
-/* ============================================ */
 /* MODAL */
-/* ============================================ */
 
 .modal {
     display: none;
@@ -940,9 +898,7 @@ tr:hover td {
     margin-top: 10px;
 }
 
-/* ============================================ */
 /* REPARTIDOR - LISTA DE PEDIDOS */
-/* ============================================ */
 
 #seccion-disponibles {
     margin-bottom: 40px;
@@ -957,9 +913,7 @@ tr:hover td {
     color: var(--success-dark);
 }
 
-/* ============================================ */
-/* MEJORAS DE ACCESIBILIDAD */
-/* ============================================ */
+/* ACCESIBILIDAD */
 
 /* Skip to content link - oculto hasta recibir foco */
 .skip-link {
@@ -1033,9 +987,7 @@ a[href]:hover, button:hover, .card:hover {
     }
 }
 
-/* ============================================ */
 /* FOOTER */
-/* ============================================ */
 
 footer {
     text-align: center;
@@ -1046,9 +998,7 @@ footer {
     color: var(--gray-color);
 }
 
-/* ============================================ */
 /* MENSAJES */
-/* ============================================ */
 
 .mensaje-exito {
     background: #d4edda;
@@ -1070,9 +1020,7 @@ footer {
     font-weight: 500;
 }
 
-/* ============================================ */
 /* RESPONSIVE */
-/* ============================================ */
 
 @media (max-width: 1024px) {
     .topbar {

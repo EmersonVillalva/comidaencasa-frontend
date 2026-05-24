@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restaurantes - ComidaEnCasa</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
@@ -9,18 +11,20 @@
     <div class="topbar">
         <h2>ComidaEnCasa</h2>
         <div>
-            <span style="margin-right: 15px;">👤 Hola, <span id="nombreUsuario"></span></span>
-            <a href="cliente_inicio.html">🏠 Inicio</a>
-            <a href="restaurantes.html">🍽️ Restaurantes</a>
-            <a href="cliente_pedidos.html">📦 Mis pedidos</a>
-            <a href="cliente_perfil.html">⚙️ Mi perfil</a>
-            <a href="#" onclick="logout()" style="color: #dc3545;">🚪 Cerrar sesión</a>
+            <a href="login.html">Login</a>
+            <a href="register.html">Registro</a>
+            <a href="restaurantes.html">Restaurantes</a>
         </div>
     </div>
 
+    <div class="hero">
+        <h1>Restaurantes disponibles</h1>
+        <p>Descubre los mejores lugares cerca de ti</p>
+    </div>
+
     <div class="container">
-        <h2>Restaurantes en tu ciudad</h2>
         <div class="grid" id="restaurantes"></div>
+        <p id="error"></p>
     </div>
 
     <footer>
@@ -29,23 +33,6 @@
 
     <script>
         const API = "https://backend-production-78b0.up.railway.app/api";
-
-        const token = localStorage.getItem("token");
-        if (!token) {
-            window.location.href = "login.html";
-        }
-
-        const ciudad = localStorage.getItem("usuario_ciudad") || "General";
-        document.getElementById("nombreUsuario").textContent = localStorage.getItem("usuario_nombre") || "Usuario";
-
-        function logout() {
-            localStorage.removeItem("token");
-            localStorage.removeItem("usuario_rol");
-            localStorage.removeItem("usuario_nombre");
-            localStorage.removeItem("usuario_email");
-            localStorage.removeItem("usuario_ciudad");
-            window.location.href = "login.html";
-        }
 
         function getIconoTipoComida(tipo) {
             const iconos = {
@@ -61,15 +48,26 @@
             return iconos[tipo] || "🍽️";
         }
 
+        function escapeHtml(str) {
+            if (!str) return "";
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
         async function cargarRestaurantes() {
             try {
-                const res = await fetch(API + "/restaurantes.php?ciudad=" + encodeURIComponent(ciudad) + "&token=" + encodeURIComponent(token));
+                const res = await fetch(API + "/restaurantes.php");
+                if (!res.ok) throw new Error("Error cargando restaurantes");
                 const restaurantes = await res.json();
-                const grid = document.getElementById("restaurantes");
-                grid.innerHTML = "";
+                const contenedor = document.getElementById("restaurantes");
+                contenedor.innerHTML = "";
 
                 if (restaurantes.length === 0) {
-                    grid.innerHTML = "<p>No hay restaurantes disponibles en tu ciudad</p>";
+                    contenedor.innerHTML = "<p>No hay restaurantes disponibles</p>";
                     return;
                 }
 
@@ -80,18 +78,17 @@
                     
                     card.innerHTML = `
                         <div class="card-content">
-                            <h3>${icono} ${r.nombre}</h3>
-                            <p>${r.descripcion || "Restaurante con excelente comida"}</p>
-                            ${r.ciudad ? `<p><small>📍 ${r.ciudad}</small></p>` : ''}
-                            ${r.tipo_comida && r.tipo_comida !== 'Otros' ? `<p><small>🍽️ ${r.tipo_comida}</small></p>` : ''}
+                            <h3>${icono} ${escapeHtml(r.nombre)}</h3>
+                            <p>${escapeHtml(r.descripcion) || "Restaurante con excelente comida"}</p>
+                            ${r.ciudad ? `<p><small>📍 ${escapeHtml(r.ciudad)}</small></p>` : ''}
+                            ${r.tipo_comida && r.tipo_comida !== 'Otros' ? `<p><small>🍽️ ${escapeHtml(r.tipo_comida)}</small></p>` : ''}
                             <button onclick="verMenu(${r.id})">Ver menú</button>
                         </div>
                     `;
-                    grid.appendChild(card);
+                    contenedor.appendChild(card);
                 });
             } catch (err) {
-                console.log(err);
-                document.getElementById("restaurantes").innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+                document.getElementById("error").textContent = err.message;
             }
         }
 

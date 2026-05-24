@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ComidaEnCasa - Pide comida a domicilio</title>
+    <title>ComidaEnCasa</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -19,81 +18,48 @@
 
     <div class="hero">
         <h1>Pide comida a domicilio</h1>
-        <p>Los mejores restaurantes a un clic de distancia</p>
+        <p>Busca restaurantes cerca de ti</p>
         <div class="search-box">
-            <input id="buscador" type="text" placeholder="Buscar restaurante..." onkeyup="buscarRestaurante()">
+            <input id="buscador" placeholder="Buscar restaurante..." onkeyup="buscarRestaurante()">
         </div>
     </div>
 
     <div class="container">
-        <h2>Restaurantes destacados</h2>
+        <h2>Restaurantes</h2>
         <div class="grid" id="restaurantes"></div>
         <p id="error"></p>
     </div>
 
     <footer>
-        <p>ComidaEnCasa - Tu comida favorita a domicilio</p>
+        <p>ComidaEnCasa 2026</p>
     </footer>
 
     <script>
         const API = "https://backend-production-78b0.up.railway.app/api";
         let restaurantes = [];
 
-        function getIconoTipoComida(tipo) {
-            const iconos = {
-                "Comida Rápida": "🍔",
-                "Italiana": "🍕",
-                "Española": "🥘",
-                "China": "🥡",
-                "Japonesa": "🍣",
-                "Mexicana": "🌮",
-                "Vegetariana": "🥗",
-                "Otros": "🍽️"
-            };
-            return iconos[tipo] || "🍽️";
-        }
-
-        function escapeHtml(str) {
-            if (!str) return "";
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
-
         async function cargarRestaurantes() {
             try {
                 const res = await fetch(API + "/restaurantes.php");
                 if (!res.ok) throw new Error("Error cargando restaurantes");
                 restaurantes = await res.json();
-                mostrarRestaurantes(restaurantes);
+                mostrar(restaurantes);
             } catch (err) {
                 document.getElementById("error").textContent = err.message;
             }
         }
 
-        function mostrarRestaurantes(lista) {
+        function mostrar(lista) {
             const cont = document.getElementById("restaurantes");
             cont.innerHTML = "";
-            
-            if (lista.length === 0) {
-                cont.innerHTML = "<p>No hay restaurantes disponibles</p>";
-                return;
-            }
-            
             lista.forEach(r => {
                 const card = document.createElement("div");
                 card.className = "card";
-                const icono = getIconoTipoComida(r.tipo_comida);
-                
                 card.innerHTML = `
+                    <img src="https://picsum.photos/300/200?random=${r.id}">
                     <div class="card-content">
-                        <h3>${icono} ${escapeHtml(r.nombre)}</h3>
-                        <p>${escapeHtml(r.descripcion) || "Restaurante con excelente comida"}</p>
-                        ${r.ciudad ? `<p><small>📍 ${escapeHtml(r.ciudad)}</small></p>` : ''}
-                        ${r.tipo_comida && r.tipo_comida !== 'Otros' ? `<p><small>🍽️ ${escapeHtml(r.tipo_comida)}</small></p>` : ''}
+                        <h3>${r.nombre}</h3>
+                        <p>${r.descripcion || ""}</p>
                         <button onclick="verMenu(${r.id})">Ver menú</button>
                     </div>
                 `;
@@ -104,7 +70,7 @@
         function buscarRestaurante() {
             const texto = document.getElementById("buscador").value.toLowerCase();
             const filtrados = restaurantes.filter(r => r.nombre.toLowerCase().includes(texto));
-            mostrarRestaurantes(filtrados);
+            mostrar(filtrados);
         }
 
         function verMenu(id) {
@@ -115,4 +81,5 @@
     </script>
 </body>
 </html>
+
 

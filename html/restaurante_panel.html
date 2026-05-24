@@ -116,7 +116,7 @@
                             <td>${escapeHtml(p.cliente)}</p></td>
                             <td>${p.total} €</p></td>
                             <td>${estadoIcono} <span class="estado-${p.estado.replace(' ', '-')}">${p.estado}</span></p></td>
-                            <td>${new Date(p.fecha).toLocaleString()}】p</p></td>
+                            <td>${new Date(p.fecha).toLocaleString()}</p></td>
                             <td>
                                 <select class="select-estado" data-id="${p.id}" data-estado="${p.estado}" aria-label="Cambiar estado del pedido #${p.id}">
                                     <option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
